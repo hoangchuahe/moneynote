@@ -28,6 +28,10 @@ final transactionsProvider = StreamProvider<List<Transaction>>(
   (ref) => ref.watch(repositoryProvider).watchAllTransactions(),
 );
 
+final budgetsProvider = StreamProvider<List<Budget>>(
+  (ref) => ref.watch(repositoryProvider).watchBudgets(),
+);
+
 /// The month shown on the dashboard (first of month). Defaults to current month.
 final selectedMonthProvider = StateProvider<DateTime>((ref) {
   final now = DateTime.now();
