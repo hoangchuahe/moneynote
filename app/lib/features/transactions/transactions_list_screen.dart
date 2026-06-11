@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:moneynote/core/money.dart';
+import 'package:moneynote/core/theme.dart';
+import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/transaction_filter.dart';
+import 'package:moneynote/domain/txn_grouping.dart';
 import 'package:moneynote/features/transactions/add_transaction_screen.dart';
+import 'package:moneynote/features/transactions/transaction_tile.dart';
 import 'package:moneynote/state/providers.dart';
 
 class TransactionsListScreen extends ConsumerWidget {
@@ -52,65 +55,66 @@ class TransactionsListScreen extends ConsumerWidget {
               final txns =
                   filterTransactions(all, filter, categoryNameById: catName);
               if (txns.isEmpty) {
-                return Center(
-                    child: Text(filter.isActive
-                        ? 'Không có giao dịch khớp'
-                        : 'Chưa có giao dịch nào'));
+                return filter.isActive
+                    ? const EmptyState(
+                        icon: Icons.search_off,
+                        title: 'Không có giao dịch khớp')
+                    : const EmptyState(
+                        icon: Icons.receipt_long,
+                        title: 'Chưa có giao dịch nào',
+                        hint: "Bấm Thêm rồi gõ 'ăn phở 50k' là xong");
               }
+              final catById = {for (final c in categories) c.id: c};
+              final groups = groupByDay(txns, DateTime.now());
+              final money = Theme.of(context).extension<MoneyColors>();
+              final deleteColor = money?.expense ?? Colors.red;
               return ListView(
                 children: [
-                  for (final t in txns)
-                    Dismissible(
-                      key: Key('txn_${t.id}'),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 16),
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      onDismissed: (_) {
-                        final repo = ref.read(repositoryProvider);
-                        repo.softDeleteTransaction(t.id);
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(SnackBar(
-                            content: const Text('Đã xoá giao dịch'),
-                            action: SnackBarAction(
-                              label: 'Hoàn tác',
-                              onPressed: () => repo.restoreTransaction(t.id),
-                            ),
-                          ));
-                      },
-                      child: ListTile(
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  AddTransactionScreen(existing: t)),
-                        ),
-                        title: Text(catName[t.categoryId] ??
-                            (t.type == TransactionType.transfer
-                                ? 'Chuyển ví'
-                                : '—')),
-                        subtitle: Text(formatDmy(t.occurredAt) +
-                            (t.note.isEmpty ? '' : ' · ${t.note}')),
-                        trailing: Text(
-                          (t.type == TransactionType.expense
-                                  ? '-'
-                                  : t.type == TransactionType.transfer
-                                      ? ''
-                                      : '+') +
-                              formatVnd(t.amount),
+                  for (final g in groups) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
+                      child: Text(g.label,
                           style: TextStyle(
-                            color: t.type == TransactionType.expense
-                                ? Colors.red
-                                : t.type == TransactionType.transfer
-                                    ? Colors.grey
-                                    : Colors.green,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant)),
+                    ),
+                    for (final t in g.txns)
+                      Dismissible(
+                        key: Key('txn_${t.id}'),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          color: deleteColor,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 16),
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        onDismissed: (_) {
+                          final repo = ref.read(repositoryProvider);
+                          repo.softDeleteTransaction(t.id);
+                          ScaffoldMessenger.of(context)
+                            ..hideCurrentSnackBar()
+                            ..showSnackBar(SnackBar(
+                              content: const Text('Đã xoá giao dịch'),
+                              action: SnackBarAction(
+                                label: 'Hoàn tác',
+                                onPressed: () => repo.restoreTransaction(t.id),
+                              ),
+                            ));
+                        },
+                        child: TransactionTile(
+                          txn: t,
+                          category: catById[t.categoryId],
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    AddTransactionScreen(existing: t)),
                           ),
                         ),
                       ),
-                    ),
+                  ],
                 ],
               );
             },

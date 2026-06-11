@@ -10,6 +10,7 @@ import 'package:moneynote/state/providers.dart';
 
 import '../drift_setup.dart';
 
+
 void main() {
   setUpAll(setupSqliteForTests);
 
@@ -49,6 +50,34 @@ void main() {
           of: find.byType(ListView), matching: find.textContaining('cà phê')),
       findsOneWidget,
     );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  });
+
+  testWidgets('danh sách hiện header nhóm ngày', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    await seedIfEmpty(db);
+    addTearDown(db.close);
+    final repo = AppRepository(db);
+    await tester.runAsync(() async {
+      final w = (await repo.watchWallets().first).single;
+      await repo.addTransaction(
+          amount: 50000, type: TransactionType.expense, walletId: w.id);
+    });
+
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: const MaterialApp(home: Scaffold(body: TransactionsListScreen())),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Hôm nay'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
