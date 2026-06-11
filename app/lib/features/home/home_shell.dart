@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/features/categories/categories_screen.dart';
 import 'package:moneynote/features/dashboard/dashboard_screen.dart';
+import 'package:moneynote/features/settings/settings_screen.dart';
 import 'package:moneynote/features/transactions/add_transaction_screen.dart';
 import 'package:moneynote/features/transactions/transactions_list_screen.dart';
 import 'package:moneynote/features/wallets/wallets_screen.dart';
@@ -41,7 +42,17 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_titles[_index])),
+      appBar: AppBar(
+        title: Text(_titles[_index]),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
+        ],
+      ),
       body: _pages[_index],
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _onAdd,
