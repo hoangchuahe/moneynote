@@ -25,6 +25,21 @@ int balanceOf(Wallet wallet, List<Transaction> txns) {
   return bal;
 }
 
+/// Total EXPENSE in the calendar month of [month]. categoryId null = all expense
+/// (for an overall budget); non-null = that category's expense. Income/transfer excluded.
+int spentInMonth(List<Transaction> txns, DateTime month, {String? categoryId}) {
+  final start = DateTime(month.year, month.month, 1);
+  final end = DateTime(month.year, month.month + 1, 1);
+  var sum = 0;
+  for (final t in txns) {
+    if (t.occurredAt.isBefore(start) || !t.occurredAt.isBefore(end)) continue;
+    if (t.type != TransactionType.expense) continue;
+    if (categoryId != null && t.categoryId != categoryId) continue;
+    sum += t.amount;
+  }
+  return sum;
+}
+
 /// Income/expense totals for the calendar month containing [month].
 /// Transfers are intentionally excluded — they are not income or expense.
 MonthSummary summarize(List<Transaction> txns, DateTime month) {

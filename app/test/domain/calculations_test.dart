@@ -115,4 +115,44 @@ void main() {
       expect(summarize(txns, month).expense, 300000);
     });
   });
+
+  group('spentInMonth', () {
+    Transaction etx(int amount, String? categoryId, DateTime when,
+            {TransactionType type = TransactionType.expense}) =>
+        Transaction(
+          id: '$amount-$categoryId-$when-${type.name}',
+          amount: amount,
+          type: type,
+          categoryId: categoryId,
+          walletId: 'w1',
+          toWalletId: null,
+          note: '',
+          occurredAt: when,
+          createdAt: when,
+          updatedAt: when,
+        );
+
+    final month = DateTime(2026, 6, 1);
+    final txns = [
+      etx(50000, 'food', DateTime(2026, 6, 5)),
+      etx(30000, 'food', DateTime(2026, 6, 6)),
+      etx(20000, 'move', DateTime(2026, 6, 7)),
+      etx(99999, 'food', DateTime(2026, 5, 31)),
+      etx(5000000, 'salary', DateTime(2026, 6, 8), type: TransactionType.income),
+      etx(1000000, null, DateTime(2026, 6, 9), type: TransactionType.transfer),
+    ];
+
+    test('per-category sums only that category expense this month', () {
+      expect(spentInMonth(txns, month, categoryId: 'food'), 80000);
+      expect(spentInMonth(txns, month, categoryId: 'move'), 20000);
+    });
+
+    test('overall (null) sums all expense, excludes income + transfer', () {
+      expect(spentInMonth(txns, month), 100000);
+    });
+
+    test('respects month boundaries', () {
+      expect(spentInMonth(txns, DateTime(2026, 5, 1), categoryId: 'food'), 99999);
+    });
+  });
 }
