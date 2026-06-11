@@ -90,6 +90,7 @@ class BudgetsScreen extends ConsumerWidget {
         ),
       ),
     );
+    amountCtrl.dispose();
   }
 
   Future<void> _editBudget(
@@ -120,6 +121,7 @@ class BudgetsScreen extends ConsumerWidget {
         ],
       ),
     );
+    amountCtrl.dispose();
   }
 
   Future<void> _confirmDelete(

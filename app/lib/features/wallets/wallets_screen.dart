@@ -112,4 +112,6 @@ Future<void> showAddWalletDialog(BuildContext context, WidgetRef ref) async {
       ),
     ),
   );
+  nameCtrl.dispose();
+  balCtrl.dispose();
 }

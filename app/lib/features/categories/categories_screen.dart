@@ -98,4 +98,5 @@ Future<void> showAddCategoryDialog(BuildContext context, WidgetRef ref) async {
       ),
     ),
   );
+  nameCtrl.dispose();
 }

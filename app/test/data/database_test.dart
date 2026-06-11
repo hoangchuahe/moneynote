@@ -29,6 +29,16 @@ void main() {
     expect(wallets.single.currencyCode, 'VND');
   });
 
+  test('transactions table has occurred_at + wallet_id indexes', () async {
+    final rows = await db.customSelect(
+        "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='transactions'").get();
+    final names = rows.map((r) => r.read<String>('name')).toSet();
+    expect(
+        names,
+        containsAll(
+            ['idx_transactions_occurred_at', 'idx_transactions_wallet_id']));
+  });
+
   test('can insert and read a budget (overall + per-category)', () async {
     final now = DateTime(2026, 6, 11);
     await db.into(db.budgets).insert(BudgetsCompanion.insert(

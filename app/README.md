@@ -1,17 +1,16 @@
-# moneynote
+# MoneyNote — Flutter app
 
-A new Flutter project.
+The mobile app of [MoneyNote](../README.md) — a local-first Vietnamese expense tracker with AI natural-language entry.
 
-## Getting Started
+```bash
+flutter pub get
+flutter run        # Android emulator/device
+flutter test       # unit + widget tests (Drift in-memory; no network)
+flutter analyze
+```
 
-This project is a starting point for a Flutter application.
+Layering (one-way, top-down): `features/` (UI) → `state/providers.dart` (Riverpod) → `domain/` (pure logic) → `data/` (Drift DB, repository, AI client). UI never touches the database or network directly — everything goes through `AppRepository`.
 
-A few resources to get you started if this is your first Flutter project:
+On Windows, tests need `sqlite3.dll` in this folder (see `test/drift_setup.dart`).
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+AI entry needs the [Go server](../server) running; configure its URL in **Cài đặt → Máy chủ AI** (defaults to the Android-emulator host `10.0.2.2:8080`).
