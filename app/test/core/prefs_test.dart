@@ -47,4 +47,11 @@ void main() {
     final again = await AppPrefs.load();
     expect(again.themeMode, ThemeMode.dark);
   });
+
+  test('theme style defaults to classic and persists', () async {
+    final prefs = await AppPrefs.load();
+    expect(prefs.themeStyle, AppThemeStyle.classic);
+    await prefs.setThemeStyle(AppThemeStyle.warm);
+    expect((await AppPrefs.load()).themeStyle, AppThemeStyle.warm);
+  });
 }

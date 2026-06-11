@@ -4,6 +4,9 @@ import 'package:uuid/uuid.dart';
 
 enum Tone { serious, cheer, scold }
 
+/// Phong cách giao diện: classic = Tinh gọn (emerald), warm = Sổ tay ấm.
+enum AppThemeStyle { classic, warm }
+
 const defaultBaseUrl = 'http://10.0.2.2:8080'; // Android emulator -> host
 
 class AppPrefs {
@@ -14,6 +17,7 @@ class AppPrefs {
   static const _kToken = 'device_token';
   static const _kBaseUrl = 'ai_base_url';
   static const _kThemeMode = 'theme_mode';
+  static const _kThemeStyle = 'theme_style';
 
   static Future<AppPrefs> load() async {
     final p = await SharedPreferences.getInstance();
@@ -44,4 +48,11 @@ class AppPrefs {
         orElse: () => ThemeMode.system,
       );
   Future<void> setThemeMode(ThemeMode m) => _p.setString(_kThemeMode, m.name);
+
+  AppThemeStyle get themeStyle => AppThemeStyle.values.firstWhere(
+        (s) => s.name == _p.getString(_kThemeStyle),
+        orElse: () => AppThemeStyle.classic,
+      );
+  Future<void> setThemeStyle(AppThemeStyle s) =>
+      _p.setString(_kThemeStyle, s.name);
 }
