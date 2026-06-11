@@ -63,12 +63,18 @@ class DashboardScreen extends ConsumerWidget {
                 subtitle: Text(formatDmy(t.occurredAt) +
                     (t.note.isEmpty ? '' : ' · ${t.note}')),
                 trailing: Text(
-                  (t.type == TransactionType.expense ? '-' : '+') +
+                  (t.type == TransactionType.expense
+                          ? '-'
+                          : t.type == TransactionType.transfer
+                              ? ''
+                              : '+') +
                       formatVnd(t.amount),
                   style: TextStyle(
                     color: t.type == TransactionType.expense
                         ? Colors.red
-                        : Colors.green,
+                        : t.type == TransactionType.transfer
+                            ? Colors.grey
+                            : Colors.green,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

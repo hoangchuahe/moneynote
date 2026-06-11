@@ -88,12 +88,18 @@ class TransactionsListScreen extends ConsumerWidget {
                         subtitle: Text(formatDmy(t.occurredAt) +
                             (t.note.isEmpty ? '' : ' · ${t.note}')),
                         trailing: Text(
-                          (t.type == TransactionType.expense ? '-' : '+') +
+                          (t.type == TransactionType.expense
+                                  ? '-'
+                                  : t.type == TransactionType.transfer
+                                      ? ''
+                                      : '+') +
                               formatVnd(t.amount),
                           style: TextStyle(
                             color: t.type == TransactionType.expense
                                 ? Colors.red
-                                : Colors.green,
+                                : t.type == TransactionType.transfer
+                                    ? Colors.grey
+                                    : Colors.green,
                           ),
                         ),
                       ),
@@ -111,81 +117,75 @@ class TransactionsListScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, List<Category> categories) async {
     await showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheet) {
-            final f = ref.read(txnFilterProvider);
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Danh mục'),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      for (final c in categories)
-                        FilterChip(
-                          label: Text(c.name),
-                          selected: f.categoryIds.contains(c.id),
-                          onSelected: (sel) {
-                            final next = {...f.categoryIds};
-                            sel ? next.add(c.id) : next.remove(c.id);
-                            ref.read(txnFilterProvider.notifier).state =
-                                f.copyWith(categoryIds: next);
-                            setSheet(() {});
-                          },
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      OutlinedButton(
-                        onPressed: () async {
-                          final range = await showDateRangePicker(
-                            context: ctx,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2100),
+      builder: (ctx) => Consumer(
+        builder: (ctx, ref, _) {
+          final f = ref.watch(txnFilterProvider);
+          final notifier = ref.read(txnFilterProvider.notifier);
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Danh mục'),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final c in categories)
+                      FilterChip(
+                        label: Text(c.name),
+                        selected: f.categoryIds.contains(c.id),
+                        onSelected: (sel) {
+                          final next = {...f.categoryIds};
+                          sel ? next.add(c.id) : next.remove(c.id);
+                          notifier.state = f.copyWith(categoryIds: next);
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    OutlinedButton(
+                      onPressed: () async {
+                        final range = await showDateRangePicker(
+                          context: ctx,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                        );
+                        if (range != null) {
+                          notifier.state = f.copyWith(
+                            from: DateTime(range.start.year, range.start.month,
+                                range.start.day),
+                            to: DateTime(range.end.year, range.end.month,
+                                range.end.day, 23, 59, 59),
                           );
-                          if (range != null) {
-                            ref.read(txnFilterProvider.notifier).state =
-                                f.copyWith(
-                              from: DateTime(range.start.year,
-                                  range.start.month, range.start.day),
-                              to: DateTime(range.end.year, range.end.month,
-                                  range.end.day, 23, 59, 59),
-                            );
-                            setSheet(() {});
-                          }
-                        },
-                        child: Text(f.from == null
-                            ? 'Chọn khoảng ngày'
-                            : '${f.from!.day}/${f.from!.month} – ${f.to!.day}/${f.to!.month}'),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          ref.read(txnFilterProvider.notifier).state =
-                              const TxnFilter();
-                          Navigator.pop(ctx);
-                        },
-                        child: const Text('Xoá lọc'),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Xong'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+                        }
+                      },
+                      child: Text(f.from == null
+                          ? 'Chọn khoảng ngày'
+                          : '${f.from!.day}/${f.from!.month} – ${f.to!.day}/${f.to!.month}'),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        notifier.state = TxnFilter(text: f.text); // keep search text
+                        Navigator.pop(ctx);
+                      },
+                      child: const Text('Xoá lọc'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Xong'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
