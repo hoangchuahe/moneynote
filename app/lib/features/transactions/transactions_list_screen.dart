@@ -32,8 +32,19 @@ class TransactionsListScreen extends ConsumerWidget {
                   padding: const EdgeInsets.only(right: 16),
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
-                onDismissed: (_) =>
-                    ref.read(repositoryProvider).softDeleteTransaction(t.id),
+                onDismissed: (_) {
+                  final repo = ref.read(repositoryProvider);
+                  repo.softDeleteTransaction(t.id);
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(SnackBar(
+                      content: const Text('Đã xoá giao dịch'),
+                      action: SnackBarAction(
+                        label: 'Hoàn tác',
+                        onPressed: () => repo.restoreTransaction(t.id),
+                      ),
+                    ));
+                },
                 child: ListTile(
                   title: Text(catName[t.categoryId] ??
                       (t.type == TransactionType.transfer

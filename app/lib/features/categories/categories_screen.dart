@@ -11,20 +11,13 @@ class CategoriesScreen extends ConsumerWidget {
     final cats = ref.watch(categoriesProvider).valueOrNull ?? [];
     final expense = cats.where((c) => c.type == CategoryType.expense).toList();
     final income = cats.where((c) => c.type == CategoryType.income).toList();
-
-    return Scaffold(
-      body: ListView(
-        children: [
-          _header(context, 'Chi'),
-          for (final c in expense) _tile(ref, c),
-          _header(context, 'Thu'),
-          for (final c in income) _tile(ref, c),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _addCategoryDialog(context, ref),
-        child: const Icon(Icons.add),
-      ),
+    return ListView(
+      children: [
+        _header(context, 'Chi'),
+        for (final c in expense) _tile(context, ref, c),
+        _header(context, 'Thu'),
+        for (final c in income) _tile(context, ref, c),
+      ],
     );
   }
 
@@ -33,59 +26,76 @@ class CategoriesScreen extends ConsumerWidget {
         child: Text(t, style: Theme.of(c).textTheme.titleSmall),
       );
 
-  Widget _tile(WidgetRef ref, Category c) => ListTile(
+  Widget _tile(BuildContext context, WidgetRef ref, Category c) => ListTile(
         leading: CircleAvatar(backgroundColor: Color(c.color), radius: 12),
         title: Text(c.name),
-        onLongPress: () =>
-            ref.read(repositoryProvider).softDeleteCategory(c.id),
+        onLongPress: () => _confirmDelete(context, ref, c),
       );
 
-  Future<void> _addCategoryDialog(BuildContext context, WidgetRef ref) async {
-    final nameCtrl = TextEditingController();
-    var type = CategoryType.expense;
-    await showDialog<void>(
+  Future<void> _confirmDelete(
+      BuildContext context, WidgetRef ref, Category c) async {
+    final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text('Thêm danh mục'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Tên danh mục')),
-              DropdownButton<CategoryType>(
-                value: type,
-                isExpanded: true,
-                items: const [
-                  DropdownMenuItem(
-                      value: CategoryType.expense, child: Text('Chi')),
-                  DropdownMenuItem(
-                      value: CategoryType.income, child: Text('Thu')),
-                ],
-                onChanged: (v) =>
-                    setState(() => type = v ?? CategoryType.expense),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Huỷ')),
-            FilledButton(
-              onPressed: () {
-                final name = nameCtrl.text.trim();
-                if (name.isEmpty) return;
-                ref
-                    .read(repositoryProvider)
-                    .addCategory(name: name, type: type);
-                Navigator.pop(ctx);
-              },
-              child: const Text('Lưu'),
+      builder: (ctx) => AlertDialog(
+        title: Text('Xoá danh mục "${c.name}"?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Huỷ')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Xoá')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await ref.read(repositoryProvider).softDeleteCategory(c.id);
+    }
+  }
+}
+
+Future<void> showAddCategoryDialog(BuildContext context, WidgetRef ref) async {
+  final nameCtrl = TextEditingController();
+  var type = CategoryType.expense;
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => AlertDialog(
+        title: const Text('Thêm danh mục'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: 'Tên danh mục')),
+            DropdownButton<CategoryType>(
+              value: type,
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(
+                    value: CategoryType.expense, child: Text('Chi')),
+                DropdownMenuItem(
+                    value: CategoryType.income, child: Text('Thu')),
+              ],
+              onChanged: (v) =>
+                  setState(() => type = v ?? CategoryType.expense),
             ),
           ],
         ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Huỷ')),
+          FilledButton(
+            onPressed: () {
+              final name = nameCtrl.text.trim();
+              if (name.isEmpty) return;
+              ref.read(repositoryProvider).addCategory(name: name, type: type);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }

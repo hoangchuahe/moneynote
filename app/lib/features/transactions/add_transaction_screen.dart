@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moneynote/core/money.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/state/providers.dart';
 
@@ -27,9 +28,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     super.dispose();
   }
 
-  CategoryType get _catType => _type == TransactionType.income
-      ? CategoryType.income
-      : CategoryType.expense;
+  CategoryType get _catType => switch (_type) {
+        TransactionType.income => CategoryType.income,
+        // expense + transfer (transfer has no category UI in P1) -> expense list
+        TransactionType.expense || TransactionType.transfer =>
+          CategoryType.expense,
+      };
 
   Future<void> _save() async {
     final amount = int.tryParse(_amountCtrl.text.trim()) ?? 0;
@@ -126,8 +130,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Ngày'),
-            subtitle: Text(
-                '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}'),
+            subtitle: Text(formatDmy(_date)),
             trailing: const Icon(Icons.calendar_today),
             onTap: () async {
               final picked = await showDatePicker(

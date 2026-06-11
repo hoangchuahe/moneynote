@@ -8,6 +8,7 @@ class MonthSummary {
 }
 
 /// Current balance of [wallet] given all (non-deleted) [txns].
+/// Caller must pass only non-deleted transactions.
 int balanceOf(Wallet wallet, List<Transaction> txns) {
   var bal = wallet.initialBalance;
   for (final t in txns) {

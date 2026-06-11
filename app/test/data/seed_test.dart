@@ -21,6 +21,7 @@ void main() {
     expect(cats.length, greaterThanOrEqualTo(8));
     expect(cats.where((c) => c.type == CategoryType.income), isNotEmpty);
     expect(cats.where((c) => c.type == CategoryType.expense), isNotEmpty);
+    expect(cats.every((c) => c.isDefault), isTrue);
   });
 
   test('is idempotent (no duplicates on second run)', () async {

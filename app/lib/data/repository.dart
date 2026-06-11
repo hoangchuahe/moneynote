@@ -109,11 +109,25 @@ class AppRepository {
     );
   }
 
+  Future<void> restoreTransaction(String id) async {
+    final now = DateTime.now();
+    await (db.update(db.transactions)..where((t) => t.id.equals(id))).write(
+      TransactionsCompanion(deletedAt: const Value(null), updatedAt: Value(now)),
+    );
+  }
+
   Future<void> softDeleteWallet(String id) async {
     final now = DateTime.now();
-    await (db.update(db.wallets)..where((t) => t.id.equals(id))).write(
-      WalletsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
-    );
+    await db.transaction(() async {
+      await (db.update(db.wallets)..where((t) => t.id.equals(id))).write(
+        WalletsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
+      );
+      await (db.update(db.transactions)
+            ..where((t) => t.walletId.equals(id) | t.toWalletId.equals(id)))
+          .write(
+        TransactionsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
+      );
+    });
   }
 
   Future<void> softDeleteCategory(String id) async {

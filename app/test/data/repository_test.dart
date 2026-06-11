@@ -75,4 +75,24 @@ void main() {
     await repo.softDeleteCategory(c.id);
     expect(await repo.watchCategories().first, isEmpty);
   });
+
+  test('soft-deleting a wallet also soft-deletes its transactions', () async {
+    final w = await repo.addWallet(name: 'W', type: WalletType.cash);
+    await repo.addTransaction(
+        amount: 1000, type: TransactionType.expense, walletId: w.id);
+    expect(await repo.watchAllTransactions().first, hasLength(1));
+    await repo.softDeleteWallet(w.id);
+    expect(await repo.watchWallets().first, isEmpty);
+    expect(await repo.watchAllTransactions().first, isEmpty);
+  });
+
+  test('restoreTransaction brings a soft-deleted transaction back', () async {
+    final w = await repo.addWallet(name: 'W', type: WalletType.cash);
+    final t = await repo.addTransaction(
+        amount: 1000, type: TransactionType.expense, walletId: w.id);
+    await repo.softDeleteTransaction(t.id);
+    expect(await repo.watchAllTransactions().first, isEmpty);
+    await repo.restoreTransaction(t.id);
+    expect(await repo.watchAllTransactions().first, hasLength(1));
+  });
 }
