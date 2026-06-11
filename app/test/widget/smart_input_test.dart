@@ -15,11 +15,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../drift_setup.dart';
 
 class _FakeAiClient extends AiClient {
-  _FakeAiClient() : super(Dio(), baseUrl: 'x', deviceToken: 't');
+  final ParseResult result;
+  _FakeAiClient(
+      {this.result = const ParseResult(
+          amount: 50000, type: 'expense', category: 'Ăn uống', merchant: null,
+          occurredAt: '2026-06-11', note: 'ăn phở', confidence: 0.9, comment: 'ok')})
+      : super(Dio(), baseUrl: 'x', deviceToken: 't');
   @override
-  Future<ParseResult> parse(ParseRequest req) async => const ParseResult(
-        amount: 50000, type: 'expense', category: 'Ăn uống', merchant: null,
-        occurredAt: '2026-06-11', note: 'ăn phở', confidence: 0.9, comment: 'ok');
+  Future<ParseResult> parse(ParseRequest req) async => result;
 }
 
 void main() {
@@ -60,6 +63,48 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('50000'), findsOneWidget); // amount field pre-filled
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  });
+
+  testWidgets('amount 0 from AI leaves the amount field empty (no "0")',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase(NativeDatabase.memory());
+    await seedIfEmpty(db);
+    addTearDown(db.close);
+    final prefs = await AppPrefs.load();
+
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        prefsProvider.overrideWith((ref) async => prefs),
+        aiClientProvider.overrideWithValue(_FakeAiClient(
+            result: const ParseResult(
+                amount: 0, type: 'expense', category: null, merchant: null,
+                occurredAt: '', note: 'mua gì đó', confidence: 0.2,
+                comment: ''))),
+      ],
+      child: const MaterialApp(home: AddTransactionScreen()),
+    ));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.enterText(find.byKey(const Key('smartInput')), 'mua gì đó');
+    await tester.tap(find.byKey(const Key('parseButton')));
+    await tester.pump();
+    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 500)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final amountField = tester.widget<TextField>(find.byKey(const Key('amountField')));
+    expect(amountField.controller!.text, isEmpty,
+        reason: 'spec §9: field AI không parse được phải để trống, không điền 0');
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);

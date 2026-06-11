@@ -75,7 +75,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       if (!mounted) return;
       setState(() {
         _type = res.type == 'income' ? TransactionType.income : TransactionType.expense;
-        _amountCtrl.text = res.amount.toString();
+        // Spec §9: chỉ pre-fill field AI parse được — không điền 0 bừa.
+        if (res.amount > 0) _amountCtrl.text = res.amount.toString();
         _categoryId = catId;
         _aiSuggestedCategoryId = catId;
         _merchant = res.merchant;

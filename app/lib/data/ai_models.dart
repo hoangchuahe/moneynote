@@ -43,14 +43,16 @@ class ParseResult {
     required this.comment,
   });
 
+  /// Tolerates missing/null fields — a degraded server response pre-fills
+  /// what parsed and leaves the rest empty instead of crashing (spec §9).
   factory ParseResult.fromJson(Map<String, dynamic> j) => ParseResult(
-        amount: (j['amount'] as num).toInt(),
+        amount: (j['amount'] as num?)?.toInt() ?? 0,
         type: j['type'] as String? ?? 'expense',
         category: (j['category'] as String?)?.isEmpty ?? true
             ? null
             : j['category'] as String,
         merchant: j['merchant'] as String?,
-        occurredAt: j['occurred_at'] as String,
+        occurredAt: j['occurred_at'] as String? ?? '',
         note: j['note'] as String? ?? '',
         confidence: (j['confidence'] as num?)?.toDouble() ?? 0,
         comment: j['comment'] as String? ?? '',
