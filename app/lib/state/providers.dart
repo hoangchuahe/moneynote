@@ -4,6 +4,7 @@ import 'package:moneynote/core/prefs.dart';
 import 'package:moneynote/data/ai_client.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/data/repository.dart';
+import 'package:moneynote/domain/transaction_filter.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase(openConnection());
@@ -40,3 +41,6 @@ final aiClientProvider = Provider<AiClient?>((ref) {
   if (prefs == null) return null;
   return AiClient(Dio(), baseUrl: prefs.baseUrl, deviceToken: prefs.deviceToken);
 });
+
+final txnFilterProvider =
+    StateProvider<TxnFilter>((ref) => const TxnFilter());
