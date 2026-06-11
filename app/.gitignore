@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Drift generated files
+*.g.dart
+
+# SQLite Windows DLL for host tests
+sqlite3.dll
