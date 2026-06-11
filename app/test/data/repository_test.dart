@@ -60,4 +60,19 @@ void main() {
       throwsArgumentError,
     );
   });
+
+  test('soft-deleted wallet disappears from stream', () async {
+    final w = await repo.addWallet(name: 'W', type: WalletType.cash);
+    expect(await repo.watchWallets().first, hasLength(1));
+    await repo.softDeleteWallet(w.id);
+    expect(await repo.watchWallets().first, isEmpty);
+  });
+
+  test('soft-deleted category disappears from stream', () async {
+    final c =
+        await repo.addCategory(name: 'X', type: CategoryType.expense);
+    expect(await repo.watchCategories().first, hasLength(1));
+    await repo.softDeleteCategory(c.id);
+    expect(await repo.watchCategories().first, isEmpty);
+  });
 }

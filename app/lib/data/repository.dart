@@ -108,4 +108,18 @@ class AppRepository {
       TransactionsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
     );
   }
+
+  Future<void> softDeleteWallet(String id) async {
+    final now = DateTime.now();
+    await (db.update(db.wallets)..where((t) => t.id.equals(id))).write(
+      WalletsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
+    );
+  }
+
+  Future<void> softDeleteCategory(String id) async {
+    final now = DateTime.now();
+    await (db.update(db.categories)..where((t) => t.id.equals(id))).write(
+      CategoriesCompanion(deletedAt: Value(now), updatedAt: Value(now)),
+    );
+  }
 }
