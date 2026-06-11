@@ -72,12 +72,25 @@ class MerchantMemories extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Wallets, Categories, Transactions, MerchantMemories])
+class Budgets extends Table {
+  TextColumn get id => text()();
+  TextColumn get categoryId =>
+      text().nullable().references(Categories, #id)(); // null = overall budget
+  IntColumn get amount => integer()(); // monthly limit, đồng
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Wallets, Categories, Transactions, MerchantMemories, Budgets])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -88,6 +101,7 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.createTable(merchantMemories);
           if (from < 3) await _ensureMerchantIndex();
+          if (from < 4) await m.createTable(budgets);
         },
       );
 

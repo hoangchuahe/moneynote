@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value, BudgetsCompanion, WalletsCompanion;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moneynote/data/database.dart';
@@ -26,5 +27,17 @@ void main() {
     expect(wallets.single.name, 'Tiền mặt');
     expect(wallets.single.type, WalletType.cash);
     expect(wallets.single.currencyCode, 'VND');
+  });
+
+  test('can insert and read a budget (overall + per-category)', () async {
+    final now = DateTime(2026, 6, 11);
+    await db.into(db.budgets).insert(BudgetsCompanion.insert(
+        id: 'b1', categoryId: const Value(null), amount: 5000000, createdAt: now, updatedAt: now));
+    await db.into(db.budgets).insert(BudgetsCompanion.insert(
+        id: 'b2', categoryId: const Value('food'), amount: 2000000, createdAt: now, updatedAt: now));
+    final rows = await db.select(db.budgets).get();
+    expect(rows, hasLength(2));
+    expect(rows.firstWhere((b) => b.id == 'b1').categoryId, isNull);
+    expect(rows.firstWhere((b) => b.id == 'b2').amount, 2000000);
   });
 }
