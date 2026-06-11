@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/money.dart';
+import 'package:moneynote/data/ai_models.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/state/providers.dart';
 
@@ -16,16 +17,76 @@ class AddTransactionScreen extends ConsumerStatefulWidget {
 class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final _amountCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
+  final _smartCtrl = TextEditingController();
   TransactionType _type = TransactionType.expense;
   String? _categoryId;
   String? _walletId;
   DateTime _date = DateTime.now();
+  bool _parsing = false;
+  String? _merchant;
+  String? _aiSuggestedCategoryId;
 
   @override
   void dispose() {
     _amountCtrl.dispose();
     _noteCtrl.dispose();
+    _smartCtrl.dispose();
     super.dispose();
+  }
+
+  String? _firstWhereNameId(List<Category> cats, String name) {
+    for (final c in cats) {
+      if (c.name == name) return c.id;
+    }
+    return null;
+  }
+
+  Future<void> _runSmartParse() async {
+    final text = _smartCtrl.text.trim();
+    if (text.isEmpty) return;
+    final client = ref.read(aiClientProvider);
+    if (client == null) return;
+    final prefs = await ref.read(prefsProvider.future);
+    final cats = ref.read(categoriesProvider).valueOrNull ?? [];
+    setState(() => _parsing = true);
+    try {
+      final today = DateTime.now();
+      final res = await client.parse(ParseRequest(
+        text: text,
+        today:
+            '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}',
+        tone: prefs.tone,
+        categories: cats.map((c) => c.name).toList(),
+        wallets:
+            (ref.read(walletsProvider).valueOrNull ?? []).map((w) => w.name).toList(),
+      ));
+
+      String? catId = res.category == null ? null : _firstWhereNameId(cats, res.category!);
+      if (res.merchant != null) {
+        final learned = await ref.read(repositoryProvider).lookupMerchant(res.merchant!);
+        if (learned != null) catId = learned.id;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _type = res.type == 'income' ? TransactionType.income : TransactionType.expense;
+        _amountCtrl.text = res.amount.toString();
+        _categoryId = catId;
+        _aiSuggestedCategoryId = catId;
+        _merchant = res.merchant;
+        if (res.note.isNotEmpty) _noteCtrl.text = res.note;
+      });
+      if (res.comment.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.comment)));
+      }
+    } on AiException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('AI không khả dụng, nhập tay nhé')));
+      }
+    } finally {
+      if (mounted) setState(() => _parsing = false);
+    }
   }
 
   CategoryType get _catType => switch (_type) {
@@ -51,6 +112,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       );
       return;
     }
+    if (_merchant != null && _categoryId != _aiSuggestedCategoryId && _categoryId != null) {
+      await ref.read(repositoryProvider).upsertMerchant(_merchant!, _categoryId!);
+    }
     await ref.read(repositoryProvider).addTransaction(
           amount: amount,
           type: _type,
@@ -74,6 +138,30 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: const Key('smartInput'),
+                  controller: _smartCtrl,
+                  decoration: const InputDecoration(
+                    hintText: 'Gõ "trưa nay ăn phở 50k"…',
+                    prefixIcon: Icon(Icons.auto_awesome),
+                  ),
+                  onSubmitted: (_) => _runSmartParse(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton(
+                key: const Key('parseButton'),
+                onPressed: _parsing ? null : _runSmartParse,
+                child: _parsing
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Phân tích'),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
           SegmentedButton<TransactionType>(
             segments: const [
               ButtonSegment(

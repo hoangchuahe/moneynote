@@ -1,4 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moneynote/core/prefs.dart';
+import 'package:moneynote/data/ai_client.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/data/repository.dart';
 
@@ -28,4 +31,12 @@ final transactionsProvider = StreamProvider<List<Transaction>>(
 final selectedMonthProvider = StateProvider<DateTime>((ref) {
   final now = DateTime.now();
   return DateTime(now.year, now.month, 1);
+});
+
+final prefsProvider = FutureProvider<AppPrefs>((ref) => AppPrefs.load());
+
+final aiClientProvider = Provider<AiClient?>((ref) {
+  final prefs = ref.watch(prefsProvider).valueOrNull;
+  if (prefs == null) return null;
+  return AiClient(Dio(), baseUrl: prefs.baseUrl, deviceToken: prefs.deviceToken);
 });
