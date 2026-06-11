@@ -50,12 +50,14 @@ class MoneyColors extends ThemeExtension<MoneyColors> {
 class _Tokens {
   final Color bg, surface, primary, onPrimary, primaryContainer,
       onPrimaryContainer, warn, warnContainer, onWarnContainer,
+      onWarn, border,
       expense, income, transfer, ink, inkMuted, divider;
   const _Tokens({
     required this.bg, required this.surface, required this.primary,
     required this.onPrimary, required this.primaryContainer,
     required this.onPrimaryContainer, required this.warn,
     required this.warnContainer, required this.onWarnContainer,
+    required this.onWarn, required this.border,
     required this.expense, required this.income, required this.transfer,
     required this.ink, required this.inkMuted, required this.divider,
   });
@@ -67,6 +69,7 @@ const _classicLight = _Tokens(
   primaryContainer: Color(0xFFDFF0E8), onPrimaryContainer: Color(0xFF064D32),
   warn: Color(0xFFD97A4A), warnContainer: Color(0xFFF8E8DC),
   onWarnContainer: Color(0xFF7A3A1B),
+  onWarn: Color(0xFF4A2410), border: Color(0xFFC3CCC6),
   expense: Color(0xFFC04848), income: Color(0xFF0B7A4F),
   transfer: Color(0xFF5E6963),
   ink: Color(0xFF15201A), inkMuted: Color(0xFF5E6963),
@@ -79,6 +82,7 @@ const _classicDark = _Tokens(
   primaryContainer: Color(0xFF1F3B2E), onPrimaryContainer: Color(0xFFBFE8D4),
   warn: Color(0xFFE0936A), warnContainer: Color(0xFF3D2A1E),
   onWarnContainer: Color(0xFFF0CDB5),
+  onWarn: Color(0xFF2A1A10), border: Color(0xFF3A443D),
   expense: Color(0xFFE07A6E), income: Color(0xFF5BC894),
   transfer: Color(0xFF9BA59E),
   ink: Color(0xFFE7EDE9), inkMuted: Color(0xFF9BA59E),
@@ -87,13 +91,14 @@ const _classicDark = _Tokens(
 
 const _warmLight = _Tokens(
   bg: Color(0xFFFAF3E7), surface: Color(0xFFFFFCF5),
-  primary: Color(0xFFD96C3B), onPrimary: Color(0xFFFFF8EC),
+  primary: Color(0xFFD96C3B), onPrimary: Color(0xFF3D1A08),
   primaryContainer: Color(0xFFF6E3CB), onPrimaryContainer: Color(0xFF7A3A1B),
   warn: Color(0xFFB98345), warnContainer: Color(0xFFF2E2C8),
   onWarnContainer: Color(0xFF5C3D14),
+  onWarn: Color(0xFF4A2410), border: Color(0xFFDECBB0),
   expense: Color(0xFFB3422F), income: Color(0xFF4F6E3C),
   transfer: Color(0xFF8A7A63),
-  ink: Color(0xFF42382B), inkMuted: Color(0xFF8A7A63),
+  ink: Color(0xFF42382B), inkMuted: Color(0xFF7A6B52),
   divider: Color(0xFFF0E6D4),
 );
 
@@ -103,6 +108,7 @@ const _warmDark = _Tokens(
   primaryContainer: Color(0xFF3D2A1E), onPrimaryContainer: Color(0xFFF0CDB5),
   warn: Color(0xFFC99A5B), warnContainer: Color(0xFF38301F),
   onWarnContainer: Color(0xFFEAD9B8),
+  onWarn: Color(0xFF2A1A10), border: Color(0xFF4A3F30),
   expense: Color(0xFFE08573), income: Color(0xFF9DBE7F),
   transfer: Color(0xFFA89878),
   ink: Color(0xFFEFE6D8), inkMuted: Color(0xFFB3A48C),
@@ -123,7 +129,7 @@ ThemeData buildTheme(AppThemeStyle style, Brightness brightness) {
     primaryContainer: t.primaryContainer,
     onPrimaryContainer: t.onPrimaryContainer,
     secondary: t.warn,
-    onSecondary: t.onPrimary,
+    onSecondary: t.onWarn,
     secondaryContainer: t.warnContainer,
     onSecondaryContainer: t.onWarnContainer,
     error: t.expense,
@@ -133,8 +139,9 @@ ThemeData buildTheme(AppThemeStyle style, Brightness brightness) {
     surface: t.surface,
     onSurface: t.ink,
     onSurfaceVariant: t.inkMuted,
-    outline: t.divider,
+    outline: t.border,
     outlineVariant: t.divider,
+    surfaceTint: Colors.transparent,
   );
   return ThemeData(
     useMaterial3: true,
@@ -155,10 +162,6 @@ ThemeData buildTheme(AppThemeStyle style, Brightness brightness) {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: t.surface,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: t.divider, width: 0.8),
-      ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: t.divider, width: 0.8),

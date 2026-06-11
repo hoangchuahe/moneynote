@@ -30,5 +30,6 @@ void main() {
   test('buildLightTheme/buildDarkTheme cũ vẫn dùng được (classic)', () {
     expect(buildLightTheme().colorScheme.primary, const Color(0xFF0B7A4F));
     expect(buildDarkTheme().brightness, Brightness.dark);
+    expect(buildDarkTheme().colorScheme.primary, const Color(0xFF5BC894));
   });
 }
