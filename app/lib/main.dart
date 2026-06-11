@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moneynote/core/prefs.dart';
 import 'package:moneynote/core/theme.dart';
 import 'package:moneynote/data/seed.dart';
 import 'package:moneynote/features/home/home_shell.dart';
@@ -19,12 +20,13 @@ class MoneyNoteApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(prefsProvider
-        .select((p) => p.valueOrNull?.themeMode ?? ThemeMode.system));
+    final prefs = ref.watch(prefsProvider).valueOrNull;
+    final themeMode = prefs?.themeMode ?? ThemeMode.system;
+    final style = prefs?.themeStyle ?? AppThemeStyle.classic;
     return MaterialApp(
       title: 'MoneyNote',
-      theme: buildLightTheme(),
-      darkTheme: buildDarkTheme(),
+      theme: buildTheme(style, Brightness.light),
+      darkTheme: buildTheme(style, Brightness.dark),
       themeMode: themeMode,
       debugShowCheckedModeBanner: false,
       // App tiếng Việt: date picker, dialog, tooltips… đều theo locale vi.
