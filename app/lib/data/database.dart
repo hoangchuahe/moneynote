@@ -60,12 +60,32 @@ class Transactions extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Wallets, Categories, Transactions])
+class MerchantMemories extends Table {
+  TextColumn get id => text()();
+  TextColumn get merchant => text()(); // normalized lowercase
+  TextColumn get categoryId => text().references(Categories, #id)();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Wallets, Categories, Transactions, MerchantMemories])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) await m.createTable(merchantMemories);
+        },
+      );
 }
 
 /// App (device) connection — file in the documents dir.

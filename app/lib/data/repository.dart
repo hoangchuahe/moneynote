@@ -136,4 +136,41 @@ class AppRepository {
       CategoriesCompanion(deletedAt: Value(now), updatedAt: Value(now)),
     );
   }
+
+  /// Returns the learned Category for a normalized merchant, or null.
+  Future<Category?> lookupMerchant(String merchant) async {
+    final key = merchant.trim().toLowerCase();
+    final mem = await (db.select(db.merchantMemories)
+          ..where((t) => t.merchant.equals(key) & t.deletedAt.isNull()))
+        .getSingleOrNull();
+    if (mem == null) return null;
+    return (db.select(db.categories)
+          ..where((t) => t.id.equals(mem.categoryId) & t.deletedAt.isNull()))
+        .getSingleOrNull();
+  }
+
+  /// Learns/updates merchant -> category.
+  Future<void> upsertMerchant(String merchant, String categoryId) async {
+    final key = merchant.trim().toLowerCase();
+    final now = DateTime.now();
+    final existing = await (db.select(db.merchantMemories)
+          ..where((t) => t.merchant.equals(key)))
+        .getSingleOrNull();
+    if (existing == null) {
+      await db.into(db.merchantMemories).insert(MerchantMemoriesCompanion.insert(
+            id: _uuid.v4(),
+            merchant: key,
+            categoryId: categoryId,
+            createdAt: now,
+            updatedAt: now,
+          ));
+    } else {
+      await (db.update(db.merchantMemories)..where((t) => t.id.equals(existing.id)))
+          .write(MerchantMemoriesCompanion(
+        categoryId: Value(categoryId),
+        deletedAt: const Value(null),
+        updatedAt: Value(now),
+      ));
+    }
+  }
 }
