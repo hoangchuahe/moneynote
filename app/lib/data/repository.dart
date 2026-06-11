@@ -154,6 +154,45 @@ class AppRepository {
         .getSingleOrNull();
   }
 
+  Stream<List<Budget>> watchBudgets() => (db.select(db.budgets)
+        ..where((t) => t.deletedAt.isNull())
+        ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+      .watch();
+
+  /// Sets the monthly budget for [categoryId] (null = overall). Updates the
+  /// existing row for that category (un-deleting if needed), or inserts a new one.
+  Future<void> upsertBudget(String? categoryId, int amount) async {
+    final now = DateTime.now();
+    final existing = await (db.select(db.budgets)
+          ..where((t) => categoryId == null
+              ? t.categoryId.isNull()
+              : t.categoryId.equals(categoryId)))
+        .getSingleOrNull();
+    if (existing == null) {
+      await db.into(db.budgets).insert(BudgetsCompanion.insert(
+            id: _uuid.v4(),
+            categoryId: Value(categoryId),
+            amount: amount,
+            createdAt: now,
+            updatedAt: now,
+          ));
+    } else {
+      await (db.update(db.budgets)..where((t) => t.id.equals(existing.id)))
+          .write(BudgetsCompanion(
+        amount: Value(amount),
+        deletedAt: const Value(null),
+        updatedAt: Value(now),
+      ));
+    }
+  }
+
+  Future<void> deleteBudget(String id) async {
+    final now = DateTime.now();
+    await (db.update(db.budgets)..where((t) => t.id.equals(id))).write(
+      BudgetsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
+    );
+  }
+
   /// Learns/updates merchant -> category.
   Future<void> upsertMerchant(String merchant, String categoryId) async {
     final key = merchant.trim().toLowerCase();

@@ -119,4 +119,32 @@ void main() {
     expect(t.toWalletId, b.id);
     expect(t.categoryId, isNull);
   });
+
+  test('upsertBudget inserts then updates (one per category)', () async {
+    final c = await repo.addCategory(name: 'Ăn uống', type: CategoryType.expense);
+    await repo.upsertBudget(c.id, 2000000);
+    var budgets = await repo.watchBudgets().first;
+    expect(budgets, hasLength(1));
+    expect(budgets.single.amount, 2000000);
+
+    await repo.upsertBudget(c.id, 2500000);
+    budgets = await repo.watchBudgets().first;
+    expect(budgets, hasLength(1));
+    expect(budgets.single.amount, 2500000);
+  });
+
+  test('upsertBudget supports an overall (null category) budget', () async {
+    await repo.upsertBudget(null, 10000000);
+    final budgets = await repo.watchBudgets().first;
+    expect(budgets, hasLength(1));
+    expect(budgets.single.categoryId, isNull);
+    expect(budgets.single.amount, 10000000);
+  });
+
+  test('deleteBudget soft-deletes', () async {
+    await repo.upsertBudget(null, 10000000);
+    final b = (await repo.watchBudgets().first).single;
+    await repo.deleteBudget(b.id);
+    expect(await repo.watchBudgets().first, isEmpty);
+  });
 }
