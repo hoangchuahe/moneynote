@@ -47,4 +47,25 @@ void main() {
     final prefs = await tester.runAsync(AppPrefs.load);
     expect(prefs!.themeMode, ThemeMode.dark);
   });
+
+  testWidgets('settings can switch theme style to warm', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const ProviderScope(
+      child: MaterialApp(home: SettingsScreen()),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Sổ tay ấm'), 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('Sổ tay ấm'));
+    await tester.pumpAndSettle();
+
+    final prefs = await tester.runAsync(AppPrefs.load);
+    expect(prefs!.themeStyle, AppThemeStyle.warm);
+  });
 }

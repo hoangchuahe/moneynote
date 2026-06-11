@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/prefs.dart';
+import 'package:moneynote/core/theme.dart';
 import 'package:moneynote/state/providers.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -73,6 +74,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
               const Divider(),
+              const _SectionHeader('Phong cách'),
+              RadioGroup<AppThemeStyle>(
+                groupValue: prefs.themeStyle,
+                onChanged: (v) async {
+                  if (v == null) return;
+                  await prefs.setThemeStyle(v);
+                  ref.invalidate(prefsProvider);
+                },
+                child: Column(
+                  children: [
+                    for (final s in AppThemeStyle.values)
+                      RadioListTile<AppThemeStyle>(
+                        title: Text(_styleLabel(s)),
+                        secondary: _StylePreviewDot(style: s),
+                        value: s,
+                      ),
+                  ],
+                ),
+              ),
+              const Divider(),
               const _SectionHeader('Máy chủ AI'),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -128,6 +149,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ThemeMode.light => 'Sáng',
         ThemeMode.dark => 'Tối',
       };
+
+  String _styleLabel(AppThemeStyle s) => switch (s) {
+        AppThemeStyle.classic => 'Tinh gọn',
+        AppThemeStyle.warm => 'Sổ tay ấm',
+      };
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -139,4 +165,41 @@ class _SectionHeader extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
         child: Text(text, style: Theme.of(context).textTheme.titleSmall),
       );
+}
+
+class _StylePreviewDot extends StatelessWidget {
+  final AppThemeStyle style;
+  const _StylePreviewDot({required this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    final light = buildTheme(style, Brightness.light).colorScheme;
+    return SizedBox(
+      width: 36,
+      height: 20,
+      child: Stack(
+        children: [
+          Container(
+            width: 20,
+            height: 20,
+            decoration:
+                BoxDecoration(color: light.primary, shape: BoxShape.circle),
+          ),
+          Positioned(
+            left: 14,
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: light.primaryContainer,
+                shape: BoxShape.circle,
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outline, width: 0.8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
