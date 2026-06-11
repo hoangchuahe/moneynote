@@ -21,6 +21,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   TransactionType _type = TransactionType.expense;
   String? _categoryId;
   String? _walletId;
+  String? _toWalletId;
   DateTime _date = DateTime.now();
   bool _parsing = false;
   String? _merchant;
@@ -104,8 +105,26 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final amount = int.tryParse(_amountCtrl.text.trim()) ?? 0;
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nhập số tiền hợp lệ')),
-      );
+        const SnackBar(content: Text('Nhập số tiền hợp lệ')));
+      return;
+    }
+    if (_type == TransactionType.transfer) {
+      final from = _walletId;
+      final to = _toWalletId;
+      if (from == null || to == null || from == to) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chọn hai ví khác nhau')));
+        return;
+      }
+      await ref.read(repositoryProvider).addTransaction(
+            amount: amount,
+            type: TransactionType.transfer,
+            walletId: from,
+            toWalletId: to,
+            note: _noteCtrl.text.trim(),
+            occurredAt: _date,
+          );
+      if (mounted) Navigator.of(context).pop();
       return;
     }
     final wallets = ref.read(walletsProvider).valueOrNull ?? [];
@@ -142,35 +161,38 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  key: const Key('smartInput'),
-                  controller: _smartCtrl,
-                  decoration: const InputDecoration(
-                    hintText: 'Gõ "trưa nay ăn phở 50k"…',
-                    prefixIcon: Icon(Icons.auto_awesome),
+          if (_type != TransactionType.transfer) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: const Key('smartInput'),
+                    controller: _smartCtrl,
+                    decoration: const InputDecoration(
+                      hintText: 'Gõ "trưa nay ăn phở 50k"…',
+                      prefixIcon: Icon(Icons.auto_awesome),
+                    ),
+                    onSubmitted: (_) => _runSmartParse(),
                   ),
-                  onSubmitted: (_) => _runSmartParse(),
                 ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                key: const Key('parseButton'),
-                onPressed: _parsing ? null : _runSmartParse,
-                child: _parsing
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Phân tích'),
-              ),
-            ],
-          ),
-          const Divider(height: 24),
+                const SizedBox(width: 8),
+                FilledButton(
+                  key: const Key('parseButton'),
+                  onPressed: _parsing ? null : _runSmartParse,
+                  child: _parsing
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Phân tích'),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+          ],
           SegmentedButton<TransactionType>(
             segments: const [
               ButtonSegment(
                   value: TransactionType.expense, label: Text('Chi')),
               ButtonSegment(value: TransactionType.income, label: Text('Thu')),
+              ButtonSegment(value: TransactionType.transfer, label: Text('Chuyển')),
             ],
             selected: {_type},
             onSelectionChanged: (s) => setState(() {
@@ -192,32 +214,57 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          Text('Danh mục', style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final c in cats)
-                ChoiceChip(
-                  key: Key('cat_${c.name}'),
-                  label: Text(c.name),
-                  selected: _categoryId == c.id,
-                  onSelected: (_) => setState(() => _categoryId = c.id),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            key: const Key('walletDropdown'),
-            initialValue: _walletId,
-            decoration: const InputDecoration(labelText: 'Ví'),
-            items: [
-              for (final w in wallets)
-                DropdownMenuItem(value: w.id, child: Text(w.name)),
-            ],
-            onChanged: (v) => setState(() => _walletId = v),
-          ),
+          if (_type != TransactionType.transfer) ...[
+            Text('Danh mục', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final c in cats)
+                  ChoiceChip(
+                    key: Key('cat_${c.name}'),
+                    label: Text(c.name),
+                    selected: _categoryId == c.id,
+                    onSelected: (_) => setState(() => _categoryId = c.id),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (_type == TransactionType.transfer) ...[
+            DropdownButtonFormField<String>(
+              key: const Key('fromWallet'),
+              initialValue: _walletId,
+              decoration: const InputDecoration(labelText: 'Từ ví'),
+              items: [
+                for (final w in wallets)
+                  DropdownMenuItem(value: w.id, child: Text(w.name)),
+              ],
+              onChanged: (v) => setState(() => _walletId = v),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              key: const Key('toWallet'),
+              initialValue: _toWalletId,
+              decoration: const InputDecoration(labelText: 'Đến ví'),
+              items: [
+                for (final w in wallets)
+                  DropdownMenuItem(value: w.id, child: Text(w.name)),
+              ],
+              onChanged: (v) => setState(() => _toWalletId = v),
+            ),
+          ] else
+            DropdownButtonFormField<String>(
+              key: const Key('walletDropdown'),
+              initialValue: _walletId,
+              decoration: const InputDecoration(labelText: 'Ví'),
+              items: [
+                for (final w in wallets)
+                  DropdownMenuItem(value: w.id, child: Text(w.name)),
+              ],
+              onChanged: (v) => setState(() => _walletId = v),
+            ),
           const SizedBox(height: 16),
           ListTile(
             contentPadding: EdgeInsets.zero,
