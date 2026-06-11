@@ -84,6 +84,11 @@ class AppRepository {
     if (amount <= 0) {
       throw ArgumentError.value(amount, 'amount', 'phải > 0 (đồng VND)');
     }
+    if (type == TransactionType.transfer &&
+        (toWalletId == null || toWalletId == walletId)) {
+      throw ArgumentError.value(
+          toWalletId, 'toWalletId', 'transfer cần ví đích khác ví nguồn');
+    }
     final now = DateTime.now();
     final id = _uuid.v4();
     await db.into(db.transactions).insert(TransactionsCompanion.insert(

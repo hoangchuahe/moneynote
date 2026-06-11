@@ -95,4 +95,28 @@ void main() {
     await repo.restoreTransaction(t.id);
     expect(await repo.watchAllTransactions().first, hasLength(1));
   });
+
+  test('addTransaction rejects transfer without toWallet or with same wallet', () async {
+    final a = await repo.addWallet(name: 'A', type: WalletType.cash);
+    expect(
+      () => repo.addTransaction(
+          amount: 1000, type: TransactionType.transfer, walletId: a.id),
+      throwsArgumentError,
+    );
+    expect(
+      () => repo.addTransaction(
+          amount: 1000, type: TransactionType.transfer, walletId: a.id, toWalletId: a.id),
+      throwsArgumentError,
+    );
+  });
+
+  test('addTransaction accepts a valid transfer', () async {
+    final a = await repo.addWallet(name: 'A', type: WalletType.cash);
+    final b = await repo.addWallet(name: 'B', type: WalletType.cash);
+    final t = await repo.addTransaction(
+        amount: 30000, type: TransactionType.transfer, walletId: a.id, toWalletId: b.id);
+    expect(t.type, TransactionType.transfer);
+    expect(t.toWalletId, b.id);
+    expect(t.categoryId, isNull);
+  });
 }
