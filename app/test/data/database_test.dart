@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' show Value, BudgetsCompanion, WalletsCompanion;
+import 'package:drift/drift.dart' show Value; // BudgetsCompanion/WalletsCompanion come from database.dart
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moneynote/data/database.dart';
