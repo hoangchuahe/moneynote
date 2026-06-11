@@ -120,6 +120,62 @@ void main() {
     expect(t.categoryId, isNull);
   });
 
+  test('updateTransaction edits fields in place and bumps updatedAt', () async {
+    final w = await repo.addWallet(name: 'W', type: WalletType.cash);
+    final c1 = await repo.addCategory(name: 'Ăn uống', type: CategoryType.expense);
+    final c2 = await repo.addCategory(name: 'Đi lại', type: CategoryType.expense);
+    final t = await repo.addTransaction(
+        amount: 50000,
+        type: TransactionType.expense,
+        categoryId: c1.id,
+        walletId: w.id,
+        note: 'phở');
+
+    await repo.updateTransaction(
+      t.id,
+      amount: 65000,
+      type: TransactionType.expense,
+      categoryId: c2.id,
+      walletId: w.id,
+      note: 'phở + trà đá',
+      occurredAt: DateTime(2026, 6, 1),
+    );
+
+    final all = await repo.watchAllTransactions().first;
+    expect(all, hasLength(1)); // edited in place, no duplicate
+    final u = all.single;
+    expect(u.id, t.id);
+    expect(u.amount, 65000);
+    expect(u.categoryId, c2.id);
+    expect(u.note, 'phở + trà đá');
+    expect(u.occurredAt, DateTime(2026, 6, 1));
+    expect(u.createdAt, t.createdAt); // creation time preserved
+    expect(u.updatedAt.isAfter(t.updatedAt) || u.updatedAt == t.updatedAt, isTrue);
+  });
+
+  test('updateTransaction validates like addTransaction', () async {
+    final w = await repo.addWallet(name: 'W', type: WalletType.cash);
+    final t = await repo.addTransaction(
+        amount: 1000, type: TransactionType.expense, walletId: w.id);
+    expect(
+      () => repo.updateTransaction(t.id,
+          amount: 0,
+          type: TransactionType.expense,
+          walletId: w.id,
+          occurredAt: DateTime(2026, 6, 1)),
+      throwsArgumentError,
+    );
+    expect(
+      () => repo.updateTransaction(t.id,
+          amount: 1000,
+          type: TransactionType.transfer,
+          walletId: w.id,
+          toWalletId: w.id,
+          occurredAt: DateTime(2026, 6, 1)),
+      throwsArgumentError,
+    );
+  });
+
   test('upsertBudget inserts then updates (one per category)', () async {
     final c = await repo.addCategory(name: 'Ăn uống', type: CategoryType.expense);
     await repo.upsertBudget(c.id, 2000000);

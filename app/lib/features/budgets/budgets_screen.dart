@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moneynote/core/input_formatters.dart';
 import 'package:moneynote/core/money.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/calculations.dart';
@@ -69,7 +69,7 @@ class BudgetsScreen extends ConsumerWidget {
               TextField(
                 controller: amountCtrl,
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                inputFormatters: [ThousandsInputFormatter()],
                 decoration: const InputDecoration(labelText: 'Hạn mức/tháng'),
               ),
             ],
@@ -79,7 +79,7 @@ class BudgetsScreen extends ConsumerWidget {
                 onPressed: () => Navigator.pop(ctx), child: const Text('Huỷ')),
             FilledButton(
               onPressed: () {
-                final amount = int.tryParse(amountCtrl.text.trim()) ?? 0;
+                final amount = parseVndInput(amountCtrl.text);
                 if (amount <= 0) return;
                 ref.read(repositoryProvider).upsertBudget(categoryId, amount);
                 Navigator.pop(ctx);
@@ -94,7 +94,7 @@ class BudgetsScreen extends ConsumerWidget {
 
   Future<void> _editBudget(
       BuildContext context, WidgetRef ref, Budget b) async {
-    final amountCtrl = TextEditingController(text: b.amount.toString());
+    final amountCtrl = TextEditingController(text: groupThousands(b.amount));
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -102,7 +102,7 @@ class BudgetsScreen extends ConsumerWidget {
         content: TextField(
           controller: amountCtrl,
           keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          inputFormatters: [ThousandsInputFormatter()],
           decoration: const InputDecoration(labelText: 'Hạn mức/tháng'),
         ),
         actions: [
@@ -110,7 +110,7 @@ class BudgetsScreen extends ConsumerWidget {
               onPressed: () => Navigator.pop(ctx), child: const Text('Huỷ')),
           FilledButton(
             onPressed: () {
-              final amount = int.tryParse(amountCtrl.text.trim()) ?? 0;
+              final amount = parseVndInput(amountCtrl.text);
               if (amount <= 0) return;
               ref.read(repositoryProvider).upsertBudget(b.categoryId, amount);
               Navigator.pop(ctx);

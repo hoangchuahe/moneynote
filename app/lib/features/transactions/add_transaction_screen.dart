@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moneynote/core/input_formatters.dart';
 import 'package:moneynote/core/money.dart';
 import 'package:moneynote/data/ai_models.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/state/providers.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
-  const AddTransactionScreen({super.key});
+  /// When [existing] is set the screen edits that transaction in place
+  /// instead of creating a new one.
+  const AddTransactionScreen({super.key, this.existing});
+
+  final Transaction? existing;
 
   @override
   ConsumerState<AddTransactionScreen> createState() =>
@@ -26,6 +30,23 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   bool _parsing = false;
   String? _merchant;
   String? _aiSuggestedCategoryId;
+
+  bool get _isEditing => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final t = widget.existing;
+    if (t != null) {
+      _amountCtrl.text = groupThousands(t.amount);
+      _noteCtrl.text = t.note;
+      _type = t.type;
+      _categoryId = t.categoryId;
+      _walletId = t.walletId;
+      _toWalletId = t.toWalletId;
+      _date = t.occurredAt;
+    }
+  }
 
   @override
   void dispose() {
@@ -76,7 +97,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       setState(() {
         _type = res.type == 'income' ? TransactionType.income : TransactionType.expense;
         // Spec §9: chỉ pre-fill field AI parse được — không điền 0 bừa.
-        if (res.amount > 0) _amountCtrl.text = res.amount.toString();
+        if (res.amount > 0) _amountCtrl.text = groupThousands(res.amount);
         _categoryId = catId;
         _aiSuggestedCategoryId = catId;
         _merchant = res.merchant;
@@ -103,7 +124,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       };
 
   Future<void> _save() async {
-    final amount = int.tryParse(_amountCtrl.text.trim()) ?? 0;
+    final amount = parseVndInput(_amountCtrl.text);
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Nhập số tiền hợp lệ')));
@@ -117,14 +138,27 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           const SnackBar(content: Text('Chọn hai ví khác nhau')));
         return;
       }
-      await ref.read(repositoryProvider).addTransaction(
-            amount: amount,
-            type: TransactionType.transfer,
-            walletId: from,
-            toWalletId: to,
-            note: _noteCtrl.text.trim(),
-            occurredAt: _date,
-          );
+      final repo = ref.read(repositoryProvider);
+      if (_isEditing) {
+        await repo.updateTransaction(
+          widget.existing!.id,
+          amount: amount,
+          type: TransactionType.transfer,
+          walletId: from,
+          toWalletId: to,
+          note: _noteCtrl.text.trim(),
+          occurredAt: _date,
+        );
+      } else {
+        await repo.addTransaction(
+          amount: amount,
+          type: TransactionType.transfer,
+          walletId: from,
+          toWalletId: to,
+          note: _noteCtrl.text.trim(),
+          occurredAt: _date,
+        );
+      }
       if (mounted) Navigator.of(context).pop();
       return;
     }
@@ -139,14 +173,27 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     if (_merchant != null && _categoryId != _aiSuggestedCategoryId && _categoryId != null) {
       await ref.read(repositoryProvider).upsertMerchant(_merchant!, _categoryId!);
     }
-    await ref.read(repositoryProvider).addTransaction(
-          amount: amount,
-          type: _type,
-          categoryId: _categoryId,
-          walletId: walletId,
-          note: _noteCtrl.text.trim(),
-          occurredAt: _date,
-        );
+    final repo = ref.read(repositoryProvider);
+    if (_isEditing) {
+      await repo.updateTransaction(
+        widget.existing!.id,
+        amount: amount,
+        type: _type,
+        categoryId: _categoryId,
+        walletId: walletId,
+        note: _noteCtrl.text.trim(),
+        occurredAt: _date,
+      );
+    } else {
+      await repo.addTransaction(
+        amount: amount,
+        type: _type,
+        categoryId: _categoryId,
+        walletId: walletId,
+        note: _noteCtrl.text.trim(),
+        occurredAt: _date,
+      );
+    }
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -158,11 +205,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     _walletId ??= wallets.isNotEmpty ? wallets.first.id : null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Thêm giao dịch')),
+      appBar:
+          AppBar(title: Text(_isEditing ? 'Sửa giao dịch' : 'Thêm giao dịch')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (_type != TransactionType.transfer) ...[
+          // Smart input chỉ cho nhập mới — sửa là thao tác tay có chủ đích.
+          if (!_isEditing && _type != TransactionType.transfer) ...[
             Row(
               children: [
                 Expanded(
@@ -207,7 +256,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             controller: _amountCtrl,
             autofocus: true,
             keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            inputFormatters: [ThousandsInputFormatter()],
             style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             decoration: const InputDecoration(
               labelText: 'Số tiền (đồng)',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/theme.dart';
 import 'package:moneynote/data/seed.dart';
@@ -24,6 +25,14 @@ class MoneyNoteApp extends StatelessWidget {
       darkTheme: buildDarkTheme(),
       themeMode: ThemeMode.system,
       debugShowCheckedModeBanner: false,
+      // App tiếng Việt: date picker, dialog, tooltips… đều theo locale vi.
+      locale: const Locale('vi'),
+      supportedLocales: const [Locale('vi'), Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: const _Root(),
     );
   }

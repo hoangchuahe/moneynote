@@ -72,6 +72,18 @@ class AppRepository {
         .getSingle();
   }
 
+  void _validateTransaction(
+      int amount, TransactionType type, String walletId, String? toWalletId) {
+    if (amount <= 0) {
+      throw ArgumentError.value(amount, 'amount', 'phải > 0 (đồng VND)');
+    }
+    if (type == TransactionType.transfer &&
+        (toWalletId == null || toWalletId == walletId)) {
+      throw ArgumentError.value(
+          toWalletId, 'toWalletId', 'transfer cần ví đích khác ví nguồn');
+    }
+  }
+
   Future<Transaction> addTransaction({
     required int amount,
     required TransactionType type,
@@ -81,14 +93,7 @@ class AppRepository {
     String note = '',
     DateTime? occurredAt,
   }) async {
-    if (amount <= 0) {
-      throw ArgumentError.value(amount, 'amount', 'phải > 0 (đồng VND)');
-    }
-    if (type == TransactionType.transfer &&
-        (toWalletId == null || toWalletId == walletId)) {
-      throw ArgumentError.value(
-          toWalletId, 'toWalletId', 'transfer cần ví đích khác ví nguồn');
-    }
+    _validateTransaction(amount, type, walletId, toWalletId);
     final now = DateTime.now();
     final id = _uuid.v4();
     await db.into(db.transactions).insert(TransactionsCompanion.insert(
@@ -105,6 +110,32 @@ class AppRepository {
         ));
     return (db.select(db.transactions)..where((t) => t.id.equals(id)))
         .getSingle();
+  }
+
+  /// Edits an existing transaction in place (same validation as add).
+  Future<void> updateTransaction(
+    String id, {
+    required int amount,
+    required TransactionType type,
+    String? categoryId,
+    required String walletId,
+    String? toWalletId,
+    String note = '',
+    required DateTime occurredAt,
+  }) async {
+    _validateTransaction(amount, type, walletId, toWalletId);
+    await (db.update(db.transactions)..where((t) => t.id.equals(id))).write(
+      TransactionsCompanion(
+        amount: Value(amount),
+        type: Value(type),
+        categoryId: Value(categoryId),
+        walletId: Value(walletId),
+        toWalletId: Value(toWalletId),
+        note: Value(note),
+        occurredAt: Value(occurredAt),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<void> softDeleteTransaction(String id) async {

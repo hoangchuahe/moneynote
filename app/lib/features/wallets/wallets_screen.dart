@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moneynote/core/input_formatters.dart';
 import 'package:moneynote/core/money.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/calculations.dart';
@@ -78,7 +78,7 @@ Future<void> showAddWalletDialog(BuildContext context, WidgetRef ref) async {
             TextField(
               controller: balCtrl,
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [ThousandsInputFormatter()],
               decoration: const InputDecoration(labelText: 'Số dư ban đầu'),
             ),
             DropdownButton<WalletType>(
@@ -102,7 +102,7 @@ Future<void> showAddWalletDialog(BuildContext context, WidgetRef ref) async {
               ref.read(repositoryProvider).addWallet(
                     name: name,
                     type: type,
-                    initialBalance: int.tryParse(balCtrl.text.trim()) ?? 0,
+                    initialBalance: parseVndInput(balCtrl.text),
                   );
               Navigator.pop(ctx);
             },

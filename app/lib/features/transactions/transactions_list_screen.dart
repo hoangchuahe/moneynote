@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/money.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/transaction_filter.dart';
+import 'package:moneynote/features/transactions/add_transaction_screen.dart';
 import 'package:moneynote/state/providers.dart';
 
 class TransactionsListScreen extends ConsumerWidget {
@@ -81,6 +82,11 @@ class TransactionsListScreen extends ConsumerWidget {
                           ));
                       },
                       child: ListTile(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  AddTransactionScreen(existing: t)),
+                        ),
                         title: Text(catName[t.categoryId] ??
                             (t.type == TransactionType.transfer
                                 ? 'Chuyển ví'

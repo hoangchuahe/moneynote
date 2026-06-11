@@ -13,6 +13,14 @@ String groupThousands(int n) {
 /// Formats integer đồng as VND, e.g. 50000 -> "50.000 ₫".
 String formatVnd(int dong) => '${groupThousands(dong)} ₫';
 
+/// Parses user-typed VND input, ignoring grouping dots/spaces:
+/// "1.500.000" -> 1500000. Returns 0 when no digits (caller treats as invalid).
+int parseVndInput(String s) {
+  var digits = s.replaceAll(RegExp(r'[^0-9]'), '');
+  if (digits.length > 15) digits = digits.substring(0, 15); // fits in int64
+  return digits.isEmpty ? 0 : int.parse(digits);
+}
+
 /// Formats a date as dd/MM/yyyy.
 String formatDmy(DateTime d) {
   final dd = d.day.toString().padLeft(2, '0');

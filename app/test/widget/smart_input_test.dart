@@ -62,7 +62,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('50000'), findsOneWidget); // amount field pre-filled
+    expect(find.text('50.000'), findsOneWidget); // amount field pre-filled, grouped
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);

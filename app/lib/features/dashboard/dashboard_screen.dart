@@ -32,8 +32,27 @@ class DashboardScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Tháng ${month.month}/${month.year}',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          key: const Key('prevMonth'),
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: () =>
+                              ref.read(selectedMonthProvider.notifier).state =
+                                  DateTime(month.year, month.month - 1, 1),
+                        ),
+                        Text('Tháng ${month.month}/${month.year}',
+                            style: Theme.of(context).textTheme.titleMedium),
+                        IconButton(
+                          key: const Key('nextMonth'),
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: () =>
+                              ref.read(selectedMonthProvider.notifier).state =
+                                  DateTime(month.year, month.month + 1, 1),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 12),
                     _row(context, 'Thu', s.income, Colors.green),
                     _row(context, 'Chi', s.expense, Colors.red),
