@@ -1,0 +1,64 @@
+<h2>Phase 3c — Báo cáo &amp; biểu đồ: chọn nội dung cho v1</h2>
+<p class="subtitle">3c nên có những biểu đồ nào? Click để bật/tắt (chọn nhiều). 2 ô đầu là <b>core</b> theo spec gốc (pie danh mục + trend tháng) — em chọn sẵn rồi; 2 ô sau là tuỳ chọn thêm. Xem rồi nhắn lại ở terminal nhé.</p>
+
+<div class="cards" data-multiselect>
+
+  <div class="card selected" data-choice="pie" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="width:104px;height:104px;border-radius:50%;background:conic-gradient(#0071e3 0 34%,#34c759 34% 58%,#ff9f0a 58% 78%,#ff3b30 78% 92%,#8e8e93 92% 100%);display:flex;align-items:center;justify-content:center">
+        <div style="width:54px;height:54px;border-radius:50%;background:var(--bg-secondary)"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>🥧 Chi theo danh mục</h3>
+      <p>Donut: tỷ trọng chi tiêu từng danh mục trong tháng đang chọn. <b>Core</b></p>
+    </div>
+  </div>
+
+  <div class="card selected" data-choice="trend" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;align-items:flex-end;gap:9px;height:112px;padding:0 6px">
+        <div style="display:flex;align-items:flex-end;gap:3px"><div style="width:8px;height:40px;background:#34c759;border-radius:2px 2px 0 0"></div><div style="width:8px;height:55px;background:#ff3b30;border-radius:2px 2px 0 0"></div></div>
+        <div style="display:flex;align-items:flex-end;gap:3px"><div style="width:8px;height:48px;background:#34c759;border-radius:2px 2px 0 0"></div><div style="width:8px;height:42px;background:#ff3b30;border-radius:2px 2px 0 0"></div></div>
+        <div style="display:flex;align-items:flex-end;gap:3px"><div style="width:8px;height:35px;background:#34c759;border-radius:2px 2px 0 0"></div><div style="width:8px;height:62px;background:#ff3b30;border-radius:2px 2px 0 0"></div></div>
+        <div style="display:flex;align-items:flex-end;gap:3px"><div style="width:8px;height:64px;background:#34c759;border-radius:2px 2px 0 0"></div><div style="width:8px;height:50px;background:#ff3b30;border-radius:2px 2px 0 0"></div></div>
+        <div style="display:flex;align-items:flex-end;gap:3px"><div style="width:8px;height:52px;background:#34c759;border-radius:2px 2px 0 0"></div><div style="width:8px;height:45px;background:#ff3b30;border-radius:2px 2px 0 0"></div></div>
+        <div style="display:flex;align-items:flex-end;gap:3px"><div style="width:8px;height:72px;background:#34c759;border-radius:2px 2px 0 0"></div><div style="width:8px;height:38px;background:#ff3b30;border-radius:2px 2px 0 0"></div></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>📊 Xu hướng thu/chi theo tháng</h3>
+      <p>Cột thu (xanh) vs chi (đỏ) qua ~6 tháng gần nhất. <b>Core</b></p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="top" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="width:84%;display:flex;flex-direction:column;gap:7px;font-size:10px;color:var(--text-secondary)">
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:46px;text-align:right">Ăn uống</span><div style="height:11px;width:90%;background:#0071e3;border-radius:3px"></div></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:46px;text-align:right">Đi lại</span><div style="height:11px;width:62%;background:#34c759;border-radius:3px"></div></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:46px;text-align:right">Mua sắm</span><div style="height:11px;width:45%;background:#ff9f0a;border-radius:3px"></div></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:46px;text-align:right">Giải trí</span><div style="height:11px;width:30%;background:#ff3b30;border-radius:3px"></div></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>🏆 Top danh mục chi</h3>
+      <p>Thanh ngang xếp hạng danh mục tốn nhất trong tháng. <b>Tuỳ chọn</b> (đọc nhanh hơn pie cho việc so hạng).</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="balance" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <svg viewBox="0 0 210 112" style="width:88%;height:108px">
+        <line x1="2" y1="104" x2="208" y2="104" stroke="var(--border)" stroke-width="1.5"/>
+        <polyline points="4,84 38,72 70,78 104,50 138,58 172,30 206,40" fill="none" stroke="#0071e3" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="206" cy="40" r="4" fill="#0071e3"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>📈 Số dư theo thời gian</h3>
+      <p>Đường số dư tích luỹ qua các tháng. <b>Tuỳ chọn</b> — nặng hơn, cần tính trên toàn bộ lịch sử.</p>
+    </div>
+  </div>
+
+</div>

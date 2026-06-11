@@ -18,7 +18,11 @@ jobs:
         with:
           channel: stable
           cache: true
+      # Drift's database.g.dart is gitignored — regenerate it.
       - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      # NativeDatabase tests need the system sqlite3 on Linux.
+      - run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
       - run: flutter analyze
       - run: flutter test
 

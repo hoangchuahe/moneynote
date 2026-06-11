@@ -11,6 +11,3 @@ app/sqlite3.dll
 # Go
 server/server.exe
 server/*.exe
-
-# Brainstorming visual companion (local mockup scratch)
-.superpowers/
