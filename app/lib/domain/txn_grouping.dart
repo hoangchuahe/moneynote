@@ -3,7 +3,8 @@ import 'package:moneynote/data/database.dart';
 class DayGroup {
   final String label;
   final List<Transaction> txns;
-  const DayGroup(this.label, this.txns);
+  // Không const: txns được groupByDay đổ thêm phần tử sau khi khởi tạo.
+  DayGroup(this.label, this.txns);
 }
 
 /// Nhóm giao dịch (đã sort mới trước) theo ngày, nhãn thân thiện theo [today].
