@@ -48,7 +48,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     if (client == null) return;
     final prefs = await ref.read(prefsProvider.future);
     final cats = ref.read(categoriesProvider).valueOrNull ?? [];
-    setState(() => _parsing = true);
+    setState(() {
+      _parsing = true;
+      _merchant = null;
+      _aiSuggestedCategoryId = null;
+    });
     try {
       final today = DateTime.now();
       final res = await client.parse(ParseRequest(

@@ -36,4 +36,17 @@ void main() {
     final got = await repo.lookupMerchant('highlands');
     expect(got!.id, c2.id);
   });
+
+  test('merchant column is unique at the DB level', () async {
+    final c = await repo.addCategory(name: 'Cà phê', type: CategoryType.expense);
+    final now = DateTime(2026, 6, 11);
+    await db.into(db.merchantMemories).insert(MerchantMemoriesCompanion.insert(
+        id: 'm1', merchant: 'highlands', categoryId: c.id, createdAt: now, updatedAt: now));
+    // a second row with the SAME merchant must violate the unique index
+    expect(
+      () => db.into(db.merchantMemories).insert(MerchantMemoriesCompanion.insert(
+          id: 'm2', merchant: 'highlands', categoryId: c.id, createdAt: now, updatedAt: now)),
+      throwsA(anything),
+    );
+  });
 }

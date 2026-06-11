@@ -77,15 +77,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
+        onCreate: (m) async {
+          await m.createAll();
+          await _ensureMerchantIndex();
+        },
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.createTable(merchantMemories);
+          if (from < 3) await _ensureMerchantIndex();
         },
       );
+
+  Future<void> _ensureMerchantIndex() => customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS uq_merchant_memories_merchant '
+      'ON merchant_memories (merchant)');
 }
 
 /// App (device) connection — file in the documents dir.
