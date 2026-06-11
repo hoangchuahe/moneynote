@@ -147,4 +147,15 @@ void main() {
     await repo.deleteBudget(b.id);
     expect(await repo.watchBudgets().first, isEmpty);
   });
+
+  test('upsertBudget after deleteBudget un-deletes and updates the amount', () async {
+    await repo.upsertBudget(null, 5000000);
+    final b = (await repo.watchBudgets().first).single;
+    await repo.deleteBudget(b.id);
+    expect(await repo.watchBudgets().first, isEmpty);
+    await repo.upsertBudget(null, 7000000); // re-add same (overall) budget
+    final budgets = await repo.watchBudgets().first;
+    expect(budgets, hasLength(1)); // un-deleted the existing row, not a duplicate
+    expect(budgets.single.amount, 7000000);
+  });
 }

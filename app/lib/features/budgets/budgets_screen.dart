@@ -31,8 +31,7 @@ class BudgetsScreen extends ConsumerWidget {
                     spent: spentInMonth(txns, month, categoryId: b.categoryId),
                     limit: b.amount,
                     onTap: () => _editBudget(context, ref, b),
-                    onLongPress: () =>
-                        ref.read(repositoryProvider).deleteBudget(b.id),
+                    onLongPress: () => _confirmDelete(context, ref, b),
                   ),
               ],
             ),
@@ -121,6 +120,27 @@ class BudgetsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDelete(
+      BuildContext context, WidgetRef ref, Budget b) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xoá ngân sách này?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Huỷ')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Xoá')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await ref.read(repositoryProvider).deleteBudget(b.id);
+    }
   }
 }
 
