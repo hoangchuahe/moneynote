@@ -7,3 +7,7 @@ app/.flutter-plugins-dependencies
 app/lib/**/*.g.dart
 # Host-test native sqlite (downloaded per machine)
 app/sqlite3.dll
+
+# Go
+server/server.exe
+server/*.exe
