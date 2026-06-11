@@ -14,16 +14,18 @@ void main() {
   runApp(const ProviderScope(child: MoneyNoteApp()));
 }
 
-class MoneyNoteApp extends StatelessWidget {
+class MoneyNoteApp extends ConsumerWidget {
   const MoneyNoteApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(prefsProvider
+        .select((p) => p.valueOrNull?.themeMode ?? ThemeMode.system));
     return MaterialApp(
       title: 'MoneyNote',
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       debugShowCheckedModeBanner: false,
       // App tiếng Việt: date picker, dialog, tooltips… đều theo locale vi.
       locale: const Locale('vi'),

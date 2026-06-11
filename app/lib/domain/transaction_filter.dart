@@ -36,11 +36,21 @@ class TxnFilter {
 
 /// Pure filter over a transaction list. Returns the input unchanged when the
 /// filter is not active. Category filter naturally drops transfers (null category).
-List<Transaction> filterTransactions(List<Transaction> txns, TxnFilter f) {
+/// When [categoryNameById] is provided, free text also matches category names.
+List<Transaction> filterTransactions(
+  List<Transaction> txns,
+  TxnFilter f, {
+  Map<String, String> categoryNameById = const {},
+}) {
   if (!f.isActive) return txns;
   final q = f.text.trim().toLowerCase();
   return txns.where((t) {
-    if (q.isNotEmpty && !t.note.toLowerCase().contains(q)) return false;
+    if (q.isNotEmpty &&
+        !t.note.toLowerCase().contains(q) &&
+        !(categoryNameById[t.categoryId]?.toLowerCase().contains(q) ??
+            false)) {
+      return false;
+    }
     if (f.categoryIds.isNotEmpty &&
         (t.categoryId == null || !f.categoryIds.contains(t.categoryId))) {
       return false;

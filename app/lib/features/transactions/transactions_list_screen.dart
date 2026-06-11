@@ -26,7 +26,7 @@ class TransactionsListScreen extends ConsumerWidget {
                 child: TextField(
                   key: const Key('searchField'),
                   decoration: const InputDecoration(
-                    hintText: 'Tìm theo ghi chú…',
+                    hintText: 'Tìm ghi chú, danh mục…',
                     prefixIcon: Icon(Icons.search),
                     isDense: true,
                   ),
@@ -49,7 +49,8 @@ class TransactionsListScreen extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(child: Text('Lỗi: $e')),
             data: (all) {
-              final txns = filterTransactions(all, filter);
+              final txns =
+                  filterTransactions(all, filter, categoryNameById: catName);
               if (txns.isEmpty) {
                 return Center(
                     child: Text(filter.isActive

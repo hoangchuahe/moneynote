@@ -54,4 +54,15 @@ void main() {
         all, TxnFilter(text: 'cà phê', from: DateTime(2026, 6, 1), to: DateTime(2026, 6, 30)));
     expect(r.map((t) => t.id), ['1']);
   });
+
+  test('text also matches the category name when a name map is provided', () {
+    final r = filterTransactions(all, const TxnFilter(text: 'ăn uống'),
+        categoryNameById: const {'c-food': 'Ăn uống', 'c-move': 'Đi lại'});
+    expect(r.map((t) => t.id), ['1', '3']);
+  });
+
+  test('without a name map, text only matches notes (unchanged behavior)', () {
+    final r = filterTransactions(all, const TxnFilter(text: 'ăn uống'));
+    expect(r, isEmpty);
+  });
 }
