@@ -4,10 +4,19 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/moneynote/server/internal/ai"
 	"github.com/moneynote/server/internal/api"
 )
+
+// listenAddr maps the PORT env value to a listen address (":8080" default).
+func listenAddr(port string) string {
+	if port == "" {
+		port = "8080"
+	}
+	return ":" + port
+}
 
 func main() {
 	var client ai.AIClient
@@ -26,9 +35,17 @@ func main() {
 	mux.HandleFunc("GET /health", h.HandleHealth)
 	mux.Handle("POST /ai/parse", rl.Wrap(http.HandlerFunc(h.HandleParse)))
 
-	addr := ":8080"
-	log.Printf("listening on %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	srv := &http.Server{
+		Addr:    listenAddr(os.Getenv("PORT")),
+		Handler: mux,
+		// Slowloris guards; WriteTimeout leaves room for the Claude call.
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+	log.Printf("listening on %s", srv.Addr)
+	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }

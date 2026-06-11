@@ -7,7 +7,10 @@ import (
 	"github.com/moneynote/server/internal/ai"
 )
 
-const maxTextLen = 500
+const (
+	maxTextLen = 500
+	maxBodyLen = 64 << 10 // 64 KiB — generous for text + category/wallet names
+)
 
 type Handler struct {
 	ai ai.AIClient
@@ -21,6 +24,7 @@ func (h *Handler) HandleHealth(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *Handler) HandleParse(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyLen)
 	var req ParseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeErr(w, http.StatusBadRequest, "invalid_input")

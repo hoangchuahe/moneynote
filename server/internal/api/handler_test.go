@@ -44,6 +44,21 @@ func TestHandleParseRejectsLongText(t *testing.T) {
 	}
 }
 
+// A short "text" hidden in a megabyte-sized body must be rejected before the
+// server buffers it all (body cap), not parsed and answered.
+func TestHandleParseRejectsHugeBody(t *testing.T) {
+	h := NewHandler(ai.NewFake())
+	huge := string(bytes.Repeat([]byte{'x'}, 1<<20)) // 1 MiB filler
+	body, _ := json.Marshal(ParseRequest{Text: "an pho 50k", Today: "2026-06-11",
+		Categories: []string{huge}})
+	req := httptest.NewRequest(http.MethodPost, "/ai/parse", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.HandleParse(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+}
+
 func TestHealth(t *testing.T) {
 	h := NewHandler(ai.NewFake())
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)

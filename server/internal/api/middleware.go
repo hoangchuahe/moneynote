@@ -3,18 +3,21 @@ package api
 import (
 	"net/http"
 	"sync"
+	"time"
 )
 
 // RateLimiter requires an X-Device-Token header and caps requests per device
-// for the process lifetime (in-memory; resets on restart — fine for v1).
+// per hour window (in-memory; resets on restart — fine for v1).
 type RateLimiter struct {
 	limit int
+	now   func() time.Time // injectable for tests
 	mu    sync.Mutex
+	win   time.Time // start of the hour the counts belong to
 	count map[string]int
 }
 
 func NewRateLimiter(limit int) *RateLimiter {
-	return &RateLimiter{limit: limit, count: map[string]int{}}
+	return &RateLimiter{limit: limit, now: time.Now, count: map[string]int{}}
 }
 
 func (rl *RateLimiter) Wrap(next http.Handler) http.Handler {
@@ -24,7 +27,12 @@ func (rl *RateLimiter) Wrap(next http.Handler) http.Handler {
 			writeErr(w, http.StatusUnauthorized, "missing_device_token")
 			return
 		}
+		win := rl.now().Truncate(time.Hour)
 		rl.mu.Lock()
+		if !win.Equal(rl.win) {
+			rl.win = win
+			rl.count = map[string]int{}
+		}
 		rl.count[token]++
 		over := rl.count[token] > rl.limit
 		rl.mu.Unlock()
