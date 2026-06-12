@@ -21,15 +21,7 @@ class TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final money = Theme.of(context).extension<MoneyColors>() ??
-        MoneyColors(
-          income: Colors.green,
-          expense: Colors.red,
-          transfer: Colors.grey,
-          warn: Colors.orange,
-          warnContainer: Colors.orange.shade100,
-          onWarnContainer: Colors.brown,
-        );
+    final money = moneyColorsOf(context);
     final isTransfer = txn.type == TransactionType.transfer;
     final amountColor = switch (txn.type) {
       TransactionType.income => money.income,

@@ -195,3 +195,16 @@ ThemeData buildTheme(AppThemeStyle style, Brightness brightness) {
 
 ThemeData buildLightTheme() => buildTheme(AppThemeStyle.classic, Brightness.light);
 ThemeData buildDarkTheme() => buildTheme(AppThemeStyle.classic, Brightness.dark);
+
+/// MoneyColors của theme hiện tại. Fallback màu Material cơ bản cho widget
+/// được pump trong MaterialApp không build qua buildTheme (test cũ).
+MoneyColors moneyColorsOf(BuildContext context) =>
+    Theme.of(context).extension<MoneyColors>() ??
+    MoneyColors(
+      income: Colors.green,
+      expense: Colors.red,
+      transfer: Colors.grey,
+      warn: Colors.orange,
+      warnContainer: Colors.orange.shade100,
+      onWarnContainer: Colors.brown,
+    );

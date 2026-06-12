@@ -1,10 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moneynote/core/category_visuals.dart';
 import 'package:moneynote/core/input_formatters.dart';
 import 'package:moneynote/core/money.dart';
+import 'package:moneynote/core/theme.dart';
+import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/calculations.dart';
 import 'package:moneynote/state/providers.dart';
+
+/// Leading cho BudgetTile: ô icon danh mục, hoặc ví tổng khi ngân sách Tổng.
+Widget budgetLeading(BuildContext context, Category? category) =>
+    category == null
+        ? Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.account_balance_wallet,
+                size: 18,
+                color: Theme.of(context).colorScheme.onPrimaryContainer),
+          )
+        : CategoryIconBox(iconName: category.icon, color: category.color);
 
 class BudgetsScreen extends ConsumerWidget {
   const BudgetsScreen({super.key});
@@ -14,20 +33,24 @@ class BudgetsScreen extends ConsumerWidget {
     final budgets = ref.watch(budgetsProvider).valueOrNull ?? [];
     final txns = ref.watch(transactionsProvider).valueOrNull ?? [];
     final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
-    final catName = {for (final c in categories) c.id: c.name};
+    final catById = {for (final c in categories) c.id: c};
     final month = ref.watch(selectedMonthProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ngân sách')),
       body: budgets.isEmpty
-          ? const Center(child: Text('Chưa có ngân sách nào'))
+          ? const EmptyState(
+              icon: Icons.savings,
+              title: 'Chưa có ngân sách nào',
+              hint: 'Đặt hạn mức cho một danh mục để app nhắc khi sắp vượt')
           : ListView(
               children: [
                 for (final b in budgets)
                   BudgetTile(
                     name: b.categoryId == null
                         ? 'Tổng'
-                        : (catName[b.categoryId] ?? '—'),
+                        : (catById[b.categoryId]?.name ?? 'Chưa phân loại'),
+                    leading: budgetLeading(context, catById[b.categoryId]),
                     spent: spentInMonth(txns, month, categoryId: b.categoryId),
                     limit: b.amount,
                     onTap: () => _editBudget(context, ref, b),
@@ -146,11 +169,14 @@ class BudgetsScreen extends ConsumerWidget {
   }
 }
 
-/// Progress tile reused by the Budgets screen and the dashboard budget card.
+/// Progress tile dùng ở màn Ngân sách và card ngân sách trên Tổng quan.
+/// Trạng thái màu: vượt 100% = expense (+ chip "vượt"), từ 80% = warn,
+/// dưới đó = primary.
 class BudgetTile extends StatelessWidget {
   final String name;
   final int spent;
   final int limit;
+  final Widget? leading;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   const BudgetTile({
@@ -158,27 +184,66 @@ class BudgetTile extends StatelessWidget {
     required this.name,
     required this.spent,
     required this.limit,
+    this.leading,
     this.onTap,
     this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
+    final money = moneyColorsOf(context);
+    final scheme = Theme.of(context).colorScheme;
     final over = spent > limit;
-    final ratio = limit <= 0 ? 0.0 : (spent / limit).clamp(0.0, 1.0);
+    final ratioRaw = limit <= 0 ? 0.0 : spent / limit;
+    final ratio = ratioRaw.clamp(0.0, 1.0);
+    final barColor = over
+        ? money.expense
+        : ratioRaw >= 0.8
+            ? money.warn
+            : scheme.primary;
     return ListTile(
       onTap: onTap,
       onLongPress: onLongPress,
-      title: Text(name),
+      leading: leading,
+      title: Text(name,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 4),
-          LinearProgressIndicator(value: ratio, color: over ? Colors.red : null),
-          const SizedBox(height: 4),
-          Text(
-            '${formatVnd(spent)} / ${formatVnd(limit)}${over ? '  ⚠ vượt' : ''}',
-            style: TextStyle(color: over ? Colors.red : null),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 8,
+              color: barColor,
+              backgroundColor: scheme.outlineVariant,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${formatVnd(spent)} / ${formatVnd(limit)}',
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: over ? money.expense : scheme.onSurfaceVariant,
+                      fontFeatures: const [FontFeature.tabularFigures()]),
+                ),
+              ),
+              if (over)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: money.expense.withAlpha(28),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('vượt',
+                      style: TextStyle(fontSize: 11, color: money.expense)),
+                ),
+            ],
           ),
         ],
       ),
