@@ -66,8 +66,7 @@ class TransactionsListScreen extends ConsumerWidget {
               }
               final catById = {for (final c in categories) c.id: c};
               final groups = groupByDay(txns, DateTime.now());
-              final money = Theme.of(context).extension<MoneyColors>();
-              final deleteColor = money?.expense ?? Colors.red;
+              final deleteColor = moneyColorsOf(context).expense;
               return ListView(
                 children: [
                   for (final g in groups) ...[

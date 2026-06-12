@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moneynote/core/category_visuals.dart';
 import 'package:moneynote/core/input_formatters.dart';
 import 'package:moneynote/core/money.dart';
+import 'package:moneynote/core/theme.dart';
 import 'package:moneynote/data/ai_models.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/state/providers.dart';
@@ -30,6 +32,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   bool _parsing = false;
   String? _merchant;
   String? _aiSuggestedCategoryId;
+  String? _aiComment;
 
   bool get _isEditing => widget.existing != null;
 
@@ -74,6 +77,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       _parsing = true;
       _merchant = null;
       _aiSuggestedCategoryId = null;
+      _aiComment = null;
     });
     try {
       final today = DateTime.now();
@@ -101,11 +105,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         _categoryId = catId;
         _aiSuggestedCategoryId = catId;
         _merchant = res.merchant;
+        _aiComment = res.comment.isEmpty ? null : res.comment;
         if (res.note.isNotEmpty) _noteCtrl.text = res.note;
       });
-      if (res.comment.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.comment)));
-      }
     } on AiException {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -115,6 +117,21 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       if (mounted) setState(() => _parsing = false);
     }
   }
+
+  Widget _dateTile() => ListTile(
+        leading: const Icon(Icons.calendar_today, size: 20),
+        title: const Text('Ngày'),
+        trailing: Text(formatDmy(_date)),
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: _date,
+            firstDate: DateTime(2020),
+            lastDate: DateTime(2100),
+          );
+          if (picked != null) setState(() => _date = picked);
+        },
+      );
 
   CategoryType get _catType => switch (_type) {
         TransactionType.income => CategoryType.income,
@@ -235,6 +252,37 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 ),
               ],
             ),
+            if (_aiComment != null)
+              Container(
+                key: const Key('aiCommentCard'),
+                margin: const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+                decoration: BoxDecoration(
+                  color: moneyColorsOf(context).warnContainer,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.chat_bubble_outline,
+                        size: 16, color: moneyColorsOf(context).onWarnContainer),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(_aiComment!,
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: moneyColorsOf(context).onWarnContainer)),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(Icons.close,
+                          size: 16,
+                          color: moneyColorsOf(context).onWarnContainer),
+                      onPressed: () => setState(() => _aiComment = null),
+                    ),
+                  ],
+                ),
+              ),
             const Divider(height: 24),
           ],
           SegmentedButton<TransactionType>(
@@ -255,11 +303,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             key: const Key('amountField'),
             controller: _amountCtrl,
             autofocus: true,
+            textAlign: TextAlign.center,
             keyboardType: TextInputType.number,
             inputFormatters: [ThousandsInputFormatter()],
             style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             decoration: const InputDecoration(
-              labelText: 'Số tiền (đồng)',
+              hintText: '0',
               suffixText: '₫',
             ),
           ),
@@ -274,8 +323,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 for (final c in cats)
                   ChoiceChip(
                     key: Key('cat_${c.name}'),
+                    avatar: Icon(categoryIcon(c.icon),
+                        size: 16,
+                        color: _categoryId == c.id
+                            ? Theme.of(context).colorScheme.onPrimaryContainer
+                            : Color(c.color)),
                     label: Text(c.name),
                     selected: _categoryId == c.id,
+                    selectedColor:
+                        Theme.of(context).colorScheme.primaryContainer,
                     onSelected: (_) => setState(() => _categoryId = c.id),
                   ),
               ],
@@ -304,33 +360,35 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               ],
               onChanged: (v) => setState(() => _toWalletId = v),
             ),
+            const SizedBox(height: 16),
+            Card(margin: EdgeInsets.zero, child: _dateTile()),
           ] else
-            DropdownButtonFormField<String>(
-              key: const Key('walletDropdown'),
-              initialValue: _walletId,
-              decoration: const InputDecoration(labelText: 'Ví'),
-              items: [
-                for (final w in wallets)
-                  DropdownMenuItem(value: w.id, child: Text(w.name)),
-              ],
-              onChanged: (v) => setState(() => _walletId = v),
+            // Spec UI redesign §5: ví + ngày gộp một card hai dòng.
+            Card(
+              margin: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.account_balance_wallet_outlined,
+                        size: 20),
+                    title: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        key: const Key('walletDropdown'),
+                        value: _walletId,
+                        isExpanded: true,
+                        items: [
+                          for (final w in wallets)
+                            DropdownMenuItem(value: w.id, child: Text(w.name)),
+                        ],
+                        onChanged: (v) => setState(() => _walletId = v),
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  _dateTile(),
+                ],
+              ),
             ),
-          const SizedBox(height: 16),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Ngày'),
-            subtitle: Text(formatDmy(_date)),
-            trailing: const Icon(Icons.calendar_today),
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: _date,
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2100),
-              );
-              if (picked != null) setState(() => _date = picked);
-            },
-          ),
           const SizedBox(height: 8),
           TextField(
             controller: _noteCtrl,
@@ -339,9 +397,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           const SizedBox(height: 24),
           FilledButton.icon(
             key: const Key('saveButton'),
+            style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14))),
             onPressed: _save,
             icon: const Icon(Icons.check),
-            label: const Text('Lưu'),
+            label: Text(_isEditing ? 'Lưu thay đổi' : 'Lưu'),
           ),
         ],
       ),

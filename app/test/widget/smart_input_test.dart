@@ -63,6 +63,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('50.000'), findsOneWidget); // amount field pre-filled, grouped
+    expect(find.byKey(const Key('aiCommentCard')), findsOneWidget);
+    expect(find.text('ok'), findsOneWidget); // comment hiện trong card
+    expect(find.byType(SnackBar), findsNothing); // không còn SnackBar comment
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
