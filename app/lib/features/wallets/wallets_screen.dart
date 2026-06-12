@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/input_formatters.dart';
 import 'package:moneynote/core/money.dart';
+import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/calculations.dart';
 import 'package:moneynote/state/providers.dart';
@@ -12,6 +13,12 @@ String walletTypeLabel(WalletType t) => switch (t) {
       WalletType.ewallet => 'Ví điện tử',
     };
 
+IconData walletTypeIcon(WalletType t) => switch (t) {
+      WalletType.cash => Icons.payments,
+      WalletType.bank => Icons.account_balance,
+      WalletType.ewallet => Icons.smartphone,
+    };
+
 class WalletsScreen extends ConsumerWidget {
   const WalletsScreen({super.key});
 
@@ -20,17 +27,33 @@ class WalletsScreen extends ConsumerWidget {
     final wallets = ref.watch(walletsProvider).valueOrNull ?? [];
     final txns = ref.watch(transactionsProvider).valueOrNull ?? [];
     if (wallets.isEmpty) {
-      return const Center(child: Text('Chưa có ví nào'));
+      return const EmptyState(
+          icon: Icons.account_balance_wallet,
+          title: 'Chưa có ví nào',
+          hint: 'Bấm Thêm ví để tạo ví đầu tiên');
     }
     return ListView(
       children: [
         for (final w in wallets)
           ListTile(
-            leading: const Icon(Icons.account_balance_wallet),
+            leading: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(walletTypeIcon(w.type),
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer),
+            ),
             title: Text(w.name),
             subtitle: Text(walletTypeLabel(w.type)),
             trailing: Text(formatVnd(balanceOf(w, txns)),
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    fontFeatures: [FontFeature.tabularFigures()])),
             onLongPress: () => _confirmDelete(context, ref, w),
           ),
       ],

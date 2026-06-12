@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moneynote/core/category_visuals.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/state/providers.dart';
 
@@ -27,7 +28,7 @@ class CategoriesScreen extends ConsumerWidget {
       );
 
   Widget _tile(BuildContext context, WidgetRef ref, Category c) => ListTile(
-        leading: CircleAvatar(backgroundColor: Color(c.color), radius: 12),
+        leading: CategoryIconBox(iconName: c.icon, color: c.color),
         title: Text(c.name),
         onLongPress: () => _confirmDelete(context, ref, c),
       );
