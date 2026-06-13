@@ -192,4 +192,46 @@ void main() {
       expect(categoryTotal('food', const []), 0);
     });
   });
+
+  group('inMonth', () {
+    final june = DateTime(2026, 6, 1);
+    test('start-inclusive, next-month-exclusive', () {
+      expect(inMonth(DateTime(2026, 6, 15), june), isTrue);
+      expect(inMonth(DateTime(2026, 6, 1), june), isTrue); // boundary in
+      expect(inMonth(DateTime(2026, 7, 1), june), isFalse); // boundary out
+      expect(inMonth(DateTime(2026, 5, 31), june), isFalse);
+    });
+  });
+
+  group('BudgetProgress', () {
+    test('warn at the 80% boundary', () {
+      const p = BudgetProgress(800000, 1000000);
+      expect(p.remaining, 200000);
+      expect(p.ratio, 0.8);
+      expect(p.percent, 80);
+      expect(p.level, BudgetLevel.warn);
+    });
+    test('ok below 80%', () {
+      const p = BudgetProgress(500000, 1000000);
+      expect(p.level, BudgetLevel.ok);
+      expect(p.percent, 50);
+    });
+    test('over above 100% — remaining negative, percent unclamped', () {
+      const p = BudgetProgress(1390000, 1000000);
+      expect(p.remaining, -390000);
+      expect(p.percent, 139);
+      expect(p.level, BudgetLevel.over);
+    });
+    test('limit <= 0 guard → ratio 0, percent 0, ok', () {
+      expect(const BudgetProgress(0, 0).level, BudgetLevel.ok);
+      expect(const BudgetProgress(5000, 0).ratio, 0.0);
+      expect(const BudgetProgress(5000, 0).percent, 0);
+      // spent > limit short-circuits before the ratio guard, so a 0-limit budget
+      // with any spending reads as over (mirrors BudgetTile's spent > limit).
+      expect(const BudgetProgress(5000, 0).level, BudgetLevel.over);
+    });
+    test('spent == limit is warn, not over', () {
+      expect(const BudgetProgress(1000000, 1000000).level, BudgetLevel.warn);
+    });
+  });
 }

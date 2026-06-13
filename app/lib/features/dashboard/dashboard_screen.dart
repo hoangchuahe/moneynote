@@ -5,6 +5,7 @@ import 'package:moneynote/core/theme.dart';
 import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/domain/calculations.dart';
 import 'package:moneynote/domain/txn_grouping.dart';
+import 'package:moneynote/features/budgets/budget_edit_screen.dart';
 import 'package:moneynote/features/budgets/budgets_screen.dart';
 import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
 import 'package:moneynote/features/transactions/transaction_detail_screen.dart';
@@ -106,7 +107,9 @@ class DashboardScreen extends ConsumerWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const BudgetsScreen())),
+                    builder: (_) => budgets.isEmpty
+                        ? const BudgetEditScreen()
+                        : const BudgetsScreen())),
                 child: Padding(
                   padding: const EdgeInsets.all(8),
                   child: Column(

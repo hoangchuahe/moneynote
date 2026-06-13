@@ -7,6 +7,8 @@ import 'package:moneynote/core/theme.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/data/repository.dart';
 import 'package:moneynote/data/seed.dart';
+import 'package:moneynote/features/budgets/budget_detail_screen.dart';
+import 'package:moneynote/features/budgets/budget_edit_screen.dart';
 import 'package:moneynote/features/budgets/budgets_screen.dart';
 import 'package:moneynote/state/providers.dart';
 
@@ -89,6 +91,90 @@ void main() {
         .warn;
     expect(progress.color, warnColor);
 
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  });
+
+  testWidgets('ngân sách dưới 80% hiện màu primary (ok)', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    await seedIfEmpty(db);
+    final repo = AppRepository(db);
+    final cats = await db.select(db.categories).get();
+    final food = cats.firstWhere((c) => c.name == 'Ăn uống');
+    final w = (await db.select(db.wallets).get()).first;
+    await repo.upsertBudget(food.id, 100000);
+    await repo.addTransaction(
+        amount: 50000,
+        type: TransactionType.expense,
+        categoryId: food.id,
+        walletId: w.id);
+    addTearDown(db.close);
+
+    tester.view.physicalSize = const Size(800, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: MaterialApp(
+        theme: buildTheme(AppThemeStyle.classic, Brightness.light),
+        home: const BudgetsScreen(),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    final progress = tester.widget<LinearProgressIndicator>(
+        find.byType(LinearProgressIndicator).first);
+    final primary =
+        buildTheme(AppThemeStyle.classic, Brightness.light).colorScheme.primary;
+    expect(progress.color, primary);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  });
+
+  testWidgets('FAB opens BudgetEditScreen', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    await seedIfEmpty(db);
+    addTearDown(db.close);
+    tester.view.physicalSize = const Size(800, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: const MaterialApp(home: BudgetsScreen()),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(BudgetEditScreen), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  });
+
+  testWidgets('tapping a budget tile opens its detail', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    await seedIfEmpty(db);
+    final repo = AppRepository(db);
+    final food = (await db.select(db.categories).get())
+        .firstWhere((c) => c.name == 'Ăn uống');
+    await repo.upsertBudget(food.id, 1000000);
+    addTearDown(db.close);
+    tester.view.physicalSize = const Size(800, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: const MaterialApp(home: BudgetsScreen()),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Ăn uống'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BudgetDetailScreen), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
   });

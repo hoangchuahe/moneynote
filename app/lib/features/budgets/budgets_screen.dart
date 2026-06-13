@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/category_visuals.dart';
-import 'package:moneynote/core/input_formatters.dart';
 import 'package:moneynote/core/money.dart';
+import 'package:moneynote/features/budgets/budget_detail_screen.dart';
+import 'package:moneynote/features/budgets/budget_edit_screen.dart';
 import 'package:moneynote/core/theme.dart';
 import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/data/database.dart';
@@ -25,6 +26,17 @@ Widget budgetLeading(BuildContext context, Category? category) =>
           )
         : CategoryIconBox(iconName: category.icon, color: category.color);
 
+/// Maps a domain BudgetLevel to a theme colour (single source of truth shared by
+/// BudgetTile and the budget detail donut).
+Color budgetLevelColor(BuildContext context, BudgetLevel level) {
+  final money = moneyColorsOf(context);
+  return switch (level) {
+    BudgetLevel.over => money.expense,
+    BudgetLevel.warn => money.warn,
+    BudgetLevel.ok => Theme.of(context).colorScheme.primary,
+  };
+}
+
 class BudgetsScreen extends ConsumerWidget {
   const BudgetsScreen({super.key});
 
@@ -42,7 +54,7 @@ class BudgetsScreen extends ConsumerWidget {
           ? const EmptyState(
               icon: Icons.savings,
               title: 'Chưa có ngân sách nào',
-              hint: 'Đặt hạn mức cho một danh mục để app nhắc khi sắp vượt')
+              hint: 'Đặt hạn mức cho một danh mục để theo dõi chi tiêu')
           : ListView(
               children: [
                 for (final b in budgets)
@@ -53,98 +65,17 @@ class BudgetsScreen extends ConsumerWidget {
                     leading: budgetLeading(context, catById[b.categoryId]),
                     spent: spentInMonth(txns, month, categoryId: b.categoryId),
                     limit: b.amount,
-                    onTap: () => _editBudget(context, ref, b),
+                    onTap: () => openBudgetDetail(context, b.id),
                     onLongPress: () => _confirmDelete(context, ref, b),
                   ),
               ],
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _addBudget(context, ref, categories),
+        onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const BudgetEditScreen())),
         child: const Icon(Icons.add),
       ),
     );
-  }
-
-  Future<void> _addBudget(
-      BuildContext context, WidgetRef ref, List<Category> categories) async {
-    final expenseCats =
-        categories.where((c) => c.type == CategoryType.expense).toList();
-    String? categoryId; // null = Tổng
-    final amountCtrl = TextEditingController();
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text('Thêm ngân sách'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButton<String?>(
-                value: categoryId,
-                isExpanded: true,
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('Tổng')),
-                  for (final c in expenseCats)
-                    DropdownMenuItem(value: c.id, child: Text(c.name)),
-                ],
-                onChanged: (v) => setState(() => categoryId = v),
-              ),
-              TextField(
-                controller: amountCtrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [ThousandsInputFormatter()],
-                decoration: const InputDecoration(labelText: 'Hạn mức/tháng'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx), child: const Text('Huỷ')),
-            FilledButton(
-              onPressed: () {
-                final amount = parseVndInput(amountCtrl.text);
-                if (amount <= 0) return;
-                ref.read(repositoryProvider).upsertBudget(categoryId, amount);
-                Navigator.pop(ctx);
-              },
-              child: const Text('Lưu'),
-            ),
-          ],
-        ),
-      ),
-    );
-    amountCtrl.dispose();
-  }
-
-  Future<void> _editBudget(
-      BuildContext context, WidgetRef ref, Budget b) async {
-    final amountCtrl = TextEditingController(text: groupThousands(b.amount));
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Sửa hạn mức'),
-        content: TextField(
-          controller: amountCtrl,
-          keyboardType: TextInputType.number,
-          inputFormatters: [ThousandsInputFormatter()],
-          decoration: const InputDecoration(labelText: 'Hạn mức/tháng'),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Huỷ')),
-          FilledButton(
-            onPressed: () {
-              final amount = parseVndInput(amountCtrl.text);
-              if (amount <= 0) return;
-              ref.read(repositoryProvider).upsertBudget(b.categoryId, amount);
-              Navigator.pop(ctx);
-            },
-            child: const Text('Lưu'),
-          ),
-        ],
-      ),
-    );
-    amountCtrl.dispose();
   }
 
   Future<void> _confirmDelete(
@@ -193,14 +124,10 @@ class BudgetTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final money = moneyColorsOf(context);
     final scheme = Theme.of(context).colorScheme;
-    final over = spent > limit;
-    final ratioRaw = limit <= 0 ? 0.0 : spent / limit;
-    final ratio = ratioRaw.clamp(0.0, 1.0);
-    final barColor = over
-        ? money.expense
-        : ratioRaw >= 0.8
-            ? money.warn
-            : scheme.primary;
+    final p = BudgetProgress(spent, limit);
+    final over = p.level == BudgetLevel.over;
+    final barColor = budgetLevelColor(context, p.level);
+    final ratio = p.ratio.clamp(0.0, 1.0);
     return ListTile(
       onTap: onTap,
       onLongPress: onLongPress,
