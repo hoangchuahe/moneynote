@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/category_visuals.dart';
 import 'package:moneynote/data/database.dart';
+import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
 import 'package:moneynote/state/providers.dart';
 
 class CategoriesScreen extends ConsumerWidget {
@@ -13,6 +14,7 @@ class CategoriesScreen extends ConsumerWidget {
     final expense = cats.where((c) => c.type == CategoryType.expense).toList();
     final income = cats.where((c) => c.type == CategoryType.income).toList();
     return ListView(
+      padding: EdgeInsets.only(bottom: pillClearance(context)),
       children: [
         _header(context, 'Chi'),
         for (final c in expense) _tile(context, ref, c),
