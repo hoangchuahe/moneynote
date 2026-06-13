@@ -28,11 +28,9 @@ int balanceOf(Wallet wallet, List<Transaction> txns) {
 /// Total EXPENSE in the calendar month of [month]. categoryId null = all expense
 /// (for an overall budget); non-null = that category's expense. Income/transfer excluded.
 int spentInMonth(List<Transaction> txns, DateTime month, {String? categoryId}) {
-  final start = DateTime(month.year, month.month, 1);
-  final end = DateTime(month.year, month.month + 1, 1);
   var sum = 0;
   for (final t in txns) {
-    if (t.occurredAt.isBefore(start) || !t.occurredAt.isBefore(end)) continue;
+    if (!inMonth(t.occurredAt, month)) continue;
     if (t.type != TransactionType.expense) continue;
     if (categoryId != null && t.categoryId != categoryId) continue;
     sum += t.amount;
@@ -65,4 +63,29 @@ int categoryTotal(String categoryId, List<Transaction> txns) {
     if (t.categoryId == categoryId) sum += t.amount;
   }
   return sum;
+}
+
+/// True if [when] falls in the calendar month containing [month]
+/// (start-inclusive, next-month-exclusive — the window spentInMonth uses).
+bool inMonth(DateTime when, DateTime month) {
+  final start = DateTime(month.year, month.month, 1);
+  final end = DateTime(month.year, month.month + 1, 1);
+  return !when.isBefore(start) && when.isBefore(end);
+}
+
+enum BudgetLevel { ok, warn, over }
+
+/// Spent-vs-limit progress for one budget in a month. Pure; colour *values* are
+/// mapped in the UI (budgetLevelColor), not here.
+class BudgetProgress {
+  final int spent;
+  final int limit;
+  const BudgetProgress(this.spent, this.limit);
+
+  int get remaining => limit - spent;
+  double get ratio => limit <= 0 ? 0.0 : spent / limit; // unclamped
+  int get percent => (ratio * 100).round();
+  BudgetLevel get level => spent > limit
+      ? BudgetLevel.over
+      : (ratio >= 0.8 ? BudgetLevel.warn : BudgetLevel.ok);
 }
