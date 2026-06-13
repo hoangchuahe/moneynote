@@ -39,7 +39,8 @@ List<MonthlyFlow> monthlyFlow(List<Transaction> txns, DateTime endMonth,
     {int months = 6}) {
   final result = <MonthlyFlow>[];
   for (var i = months - 1; i >= 0; i--) {
-    final m = DateTime(endMonth.year, endMonth.month - i, 1); // tự chuẩn hoá biên năm
+    final m =
+        DateTime(endMonth.year, endMonth.month - i, 1); // tự chuẩn hoá biên năm
     final s = summarize(txns, m);
     result.add(MonthlyFlow(m, s.income, s.expense));
   }

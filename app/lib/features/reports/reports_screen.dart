@@ -40,9 +40,9 @@ class ReportsScreen extends ConsumerWidget {
                     IconButton(
                       key: const Key('reportsPrevMonth'),
                       icon: const Icon(Icons.chevron_left),
-                      onPressed: () =>
-                          ref.read(selectedMonthProvider.notifier).state =
-                              DateTime(month.year, month.month - 1, 1),
+                      onPressed: () => ref
+                          .read(selectedMonthProvider.notifier)
+                          .state = DateTime(month.year, month.month - 1, 1),
                     ),
                     Text('Tháng ${month.month}/${month.year}',
                         style: const TextStyle(
@@ -50,9 +50,9 @@ class ReportsScreen extends ConsumerWidget {
                     IconButton(
                       key: const Key('reportsNextMonth'),
                       icon: const Icon(Icons.chevron_right),
-                      onPressed: () =>
-                          ref.read(selectedMonthProvider.notifier).state =
-                              DateTime(month.year, month.month + 1, 1),
+                      onPressed: () => ref
+                          .read(selectedMonthProvider.notifier)
+                          .state = DateTime(month.year, month.month + 1, 1),
                     ),
                   ],
                 ),

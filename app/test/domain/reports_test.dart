@@ -19,13 +19,16 @@ Transaction etx(int amount, String? categoryId, DateTime when,
 
 void main() {
   group('expenseByCategory', () {
-    test('groups expense by category, sorted desc, excludes income+transfer', () {
+    test('groups expense by category, sorted desc, excludes income+transfer',
+        () {
       final txns = [
         etx(50000, 'food', DateTime(2026, 6, 5)),
         etx(30000, 'food', DateTime(2026, 6, 6)),
         etx(90000, 'move', DateTime(2026, 6, 7)),
-        etx(5000000, 'salary', DateTime(2026, 6, 8), type: TransactionType.income),
-        etx(1000000, null, DateTime(2026, 6, 9), type: TransactionType.transfer),
+        etx(5000000, 'salary', DateTime(2026, 6, 8),
+            type: TransactionType.income),
+        etx(1000000, null, DateTime(2026, 6, 9),
+            type: TransactionType.transfer),
       ];
       final r = expenseByCategory(txns, DateTime(2026, 6, 1));
       expect(r.map((e) => e.categoryId).toList(), ['move', 'food']);
@@ -64,9 +67,11 @@ void main() {
 
     test('income and expense per month, transfers excluded', () {
       final txns = [
-        etx(5000000, 'salary', DateTime(2026, 6, 5), type: TransactionType.income),
+        etx(5000000, 'salary', DateTime(2026, 6, 5),
+            type: TransactionType.income),
         etx(200000, 'food', DateTime(2026, 6, 6)),
-        etx(1000000, null, DateTime(2026, 6, 7), type: TransactionType.transfer),
+        etx(1000000, null, DateTime(2026, 6, 7),
+            type: TransactionType.transfer),
         etx(300000, 'food', DateTime(2026, 5, 6)),
       ];
       final r = monthlyFlow(txns, DateTime(2026, 6, 1), months: 6);

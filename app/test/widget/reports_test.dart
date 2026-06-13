@@ -32,10 +32,12 @@ void main() {
   setUpAll(setupSqliteForTests);
 
   group('ExpensePieCard', () {
-    testWidgets('renders legend with names, amounts and percents', (tester) async {
+    testWidgets('renders legend with names, amounts and percents',
+        (tester) async {
       bigView(tester);
       await tester.pumpWidget(host(const ExpensePieCard(slices: [
-        CategorySlice(label: 'Ăn uống', color: Color(0xFFEF5350), total: 600000),
+        CategorySlice(
+            label: 'Ăn uống', color: Color(0xFFEF5350), total: 600000),
         CategorySlice(label: 'Đi lại', color: Color(0xFF42A5F5), total: 400000),
       ])));
       await tester.pump();

@@ -92,8 +92,7 @@ class ExpensePieCard extends StatelessWidget {
                                   child: Text(s.label,
                                       style: const TextStyle(fontSize: 12))),
                               Text(formatVnd(s.total),
-                                  style:
-                                      TextStyle(fontSize: 11, color: muted)),
+                                  style: TextStyle(fontSize: 11, color: muted)),
                               const SizedBox(width: 8),
                               Text('${(s.total / total * 100).round()}%',
                                   style: const TextStyle(

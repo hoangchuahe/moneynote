@@ -78,8 +78,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           NavigationDestination(icon: Icon(Icons.list), label: 'Giao dịch'),
           NavigationDestination(
               icon: Icon(Icons.account_balance_wallet), label: 'Ví'),
-          NavigationDestination(
-              icon: Icon(Icons.category), label: 'Danh mục'),
+          NavigationDestination(icon: Icon(Icons.category), label: 'Danh mục'),
         ],
       ),
     );

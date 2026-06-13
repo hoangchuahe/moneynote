@@ -86,15 +86,15 @@ class MonthlyFlowCard extends StatelessWidget {
                         toY: flows[i].income.toDouble(),
                         color: money.income,
                         width: 10,
-                        borderRadius:
-                            const BorderRadius.vertical(top: Radius.circular(4)),
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4)),
                       ),
                       BarChartRodData(
                         toY: flows[i].expense.toDouble(),
                         color: money.expense,
                         width: 10,
-                        borderRadius:
-                            const BorderRadius.vertical(top: Radius.circular(4)),
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4)),
                       ),
                     ]),
                 ],
