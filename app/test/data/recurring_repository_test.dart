@@ -191,5 +191,28 @@ void main() {
       await repo.softDeleteRecurring(r.id);
       expect(await repo.materializeDueRecurrings(DateTime(2026, 6, 13)), 0);
     });
+
+    test('materializes only the due rules among several', () async {
+      final (db, repo, wid) = await setup();
+      addTearDown(db.close);
+      await repo.addRecurring(amount: 50000, type: TransactionType.expense,
+          walletId: wid, cycle: RecurringCycle.monthly, startDate: DateTime(2026, 1, 5)); // due
+      await repo.addRecurring(amount: 99000, type: TransactionType.income,
+          walletId: wid, cycle: RecurringCycle.monthly, startDate: DateTime(2026, 12, 5)); // future
+      expect(await repo.materializeDueRecurrings(DateTime(2026, 6, 13)), 1);
+      final txns = await (db.select(db.transactions)..where((t) => t.deletedAt.isNull())).get();
+      expect(txns.length, 1);
+      expect(txns.single.amount, 50000);
+    });
+
+    test('weekly cycle materializes at the right occurrence', () async {
+      final (db, repo, wid) = await setup();
+      addTearDown(db.close);
+      await repo.addRecurring(amount: 30000, type: TransactionType.expense,
+          walletId: wid, cycle: RecurringCycle.weekly, startDate: DateTime(2026, 6, 6));
+      expect(await repo.materializeDueRecurrings(DateTime(2026, 6, 13)), 1);
+      final txns = await (db.select(db.transactions)..where((t) => t.deletedAt.isNull())).get();
+      expect(txns.single.occurredAt, DateTime(2026, 6, 13)); // 06-06 + 7 days
+    });
   });
 }

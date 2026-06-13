@@ -348,6 +348,7 @@ class AppRepository {
     final rules = await (db.select(db.recurrings)
           ..where((t) => t.deletedAt.isNull()))
         .get();
+    final now = DateTime.now();
     var created = 0;
     for (final r in rules) {
       final occ = mostRecentOccurrence(r.startDate, r.cycle, today);
@@ -367,7 +368,7 @@ class AppRepository {
         );
         await (db.update(db.recurrings)..where((t) => t.id.equals(r.id))).write(
           RecurringsCompanion(
-              lastRunAt: Value(occ), updatedAt: Value(DateTime.now())),
+              lastRunAt: Value(occ), updatedAt: Value(now)),
         );
       });
       created++;
