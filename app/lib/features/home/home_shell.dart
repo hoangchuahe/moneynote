@@ -8,6 +8,7 @@ import 'package:moneynote/features/reports/reports_screen.dart';
 import 'package:moneynote/features/settings/settings_screen.dart';
 import 'package:moneynote/features/transactions/add_transaction_screen.dart';
 import 'package:moneynote/features/transactions/transactions_list_screen.dart';
+import 'package:moneynote/features/wallets/wallet_edit_screen.dart';
 import 'package:moneynote/features/wallets/wallets_screen.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
@@ -43,7 +44,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Thêm ví',
-            onPressed: () => showAddWalletDialog(context, ref),
+            onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const WalletEditScreen())),
           ),
         if (i == 3)
           IconButton(

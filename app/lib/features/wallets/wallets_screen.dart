@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:moneynote/core/input_formatters.dart';
 import 'package:moneynote/core/money.dart';
 import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/data/database.dart';
@@ -109,58 +108,3 @@ class WalletsScreen extends ConsumerWidget {
   }
 }
 
-Future<void> showAddWalletDialog(BuildContext context, WidgetRef ref) async {
-  final nameCtrl = TextEditingController();
-  final balCtrl = TextEditingController(text: '0');
-  var type = WalletType.cash;
-  await showDialog<void>(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setState) => AlertDialog(
-        title: const Text('Thêm ví'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Tên ví')),
-            TextField(
-              controller: balCtrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [ThousandsInputFormatter()],
-              decoration: const InputDecoration(labelText: 'Số dư ban đầu'),
-            ),
-            DropdownButton<WalletType>(
-              value: type,
-              isExpanded: true,
-              items: [
-                for (final t in WalletType.values)
-                  DropdownMenuItem(value: t, child: Text(walletTypeLabel(t))),
-              ],
-              onChanged: (v) => setState(() => type = v ?? WalletType.cash),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Huỷ')),
-          FilledButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              if (name.isEmpty) return;
-              ref.read(repositoryProvider).addWallet(
-                    name: name,
-                    type: type,
-                    initialBalance: parseVndInput(balCtrl.text),
-                  );
-              Navigator.pop(ctx);
-            },
-            child: const Text('Lưu'),
-          ),
-        ],
-      ),
-    ),
-  );
-  nameCtrl.dispose();
-  balCtrl.dispose();
-}

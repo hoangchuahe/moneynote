@@ -64,4 +64,16 @@ void main() {
     final boxes = tester.widgetList<SizedBox>(find.byType(SizedBox));
     expect(boxes.any((b) => b.width == 24), isTrue);
   });
+
+  testWidgets('InsetRow renders a trailing widget', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: buildTheme(AppThemeStyle.classic, Brightness.light),
+      home: const Scaffold(
+        body: InsetSection(children: [
+          InsetRow(title: 'Có check', trailing: Icon(Icons.check, key: Key('chk'))),
+        ]),
+      ),
+    ));
+    expect(find.byKey(const Key('chk')), findsOneWidget);
+  });
 }
