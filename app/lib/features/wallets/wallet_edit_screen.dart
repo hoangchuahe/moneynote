@@ -40,7 +40,7 @@ class _WalletEditScreenState extends ConsumerState<WalletEditScreen> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context)
@@ -48,18 +48,20 @@ class _WalletEditScreenState extends ConsumerState<WalletEditScreen> {
         ..showSnackBar(const SnackBar(content: Text('Nhập tên ví')));
       return;
     }
+    final navigator = Navigator.of(context);
     final repo = ref.read(repositoryProvider);
     if (_isEditing) {
-      repo.updateWallet(
+      await repo.updateWallet(
           id: widget.existing!.id, name: name, type: _type, color: _color);
     } else {
-      repo.addWallet(
+      await repo.addWallet(
           name: name,
           type: _type,
           color: _color,
           initialBalance: parseVndInput(_balCtrl.text));
     }
-    Navigator.of(context).pop();
+    if (!mounted) return;
+    navigator.pop();
   }
 
   @override
