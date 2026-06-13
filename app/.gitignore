@@ -46,6 +46,3 @@ app.*.map.json
 
 # Drift generated files
 *.g.dart
-
-# SQLite Windows DLL for host tests
-sqlite3.dll
