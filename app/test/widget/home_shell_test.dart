@@ -7,6 +7,7 @@ import 'package:moneynote/core/theme.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/data/repository.dart';
 import 'package:moneynote/data/seed.dart';
+import 'package:moneynote/features/categories/category_edit_screen.dart';
 import 'package:moneynote/features/home/home_shell.dart';
 import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
 import 'package:moneynote/features/settings/settings_screen.dart';
@@ -121,6 +122,22 @@ void main() {
     await tester.tap(find.byTooltip('Thêm ví'));
     await tester.pumpAndSettle();
     expect(find.byType(WalletEditScreen), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  });
+
+  testWidgets('Danh mục header + opens CategoryEditScreen', (tester) async {
+    final db = await setupDb();
+    addTearDown(db.close);
+    bigView(tester);
+    await pumpShell(tester, db);
+
+    await tester.tap(find.byKey(const Key('navTab_3')));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Thêm danh mục'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CategoryEditScreen), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
