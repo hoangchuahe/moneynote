@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:moneynote/data/database.dart';
+import 'package:moneynote/domain/recurring.dart';
 
 const _uuid = Uuid();
 
@@ -339,5 +340,38 @@ class AppRepository {
     await (db.update(db.recurrings)..where((t) => t.id.equals(id))).write(
       RecurringsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
     );
+  }
+
+  /// Creates the latest-due transaction for each live rule. Idempotent.
+  /// Returns the number created. [today] is injected for determinism/tests.
+  Future<int> materializeDueRecurrings(DateTime today) async {
+    final rules = await (db.select(db.recurrings)
+          ..where((t) => t.deletedAt.isNull()))
+        .get();
+    var created = 0;
+    for (final r in rules) {
+      final occ = mostRecentOccurrence(r.startDate, r.cycle, today);
+      if (occ == null) continue;
+      final lastRun = r.lastRunAt == null
+          ? null
+          : DateTime(r.lastRunAt!.year, r.lastRunAt!.month, r.lastRunAt!.day);
+      if (lastRun != null && !occ.isAfter(lastRun)) continue;
+      await db.transaction(() async {
+        await addTransaction(
+          amount: r.amount,
+          type: r.type,
+          categoryId: r.categoryId,
+          walletId: r.walletId,
+          note: r.note,
+          occurredAt: occ,
+        );
+        await (db.update(db.recurrings)..where((t) => t.id.equals(r.id))).write(
+          RecurringsCompanion(
+              lastRunAt: Value(occ), updatedAt: Value(DateTime.now())),
+        );
+      });
+      created++;
+    }
+    return created;
   }
 }

@@ -112,4 +112,84 @@ void main() {
       expect(live, isEmpty);
     });
   });
+
+  group('materializeDueRecurrings', () {
+    Future<(AppDatabase, AppRepository, String)> setup() async {
+      final db = AppDatabase(NativeDatabase.memory());
+      await seedIfEmpty(db);
+      final repo = AppRepository(db);
+      final w = (await db.select(db.wallets).get()).first;
+      return (db, repo, w.id);
+    }
+
+    test('creates one txn at the most-recent occurrence and sets lastRunAt', () async {
+      final (db, repo, wid) = await setup();
+      addTearDown(db.close);
+      final r = await repo.addRecurring(amount: 50000, type: TransactionType.expense,
+          walletId: wid, cycle: RecurringCycle.monthly, startDate: DateTime(2026, 1, 5));
+      final today = DateTime(2026, 6, 13);
+      final created = await repo.materializeDueRecurrings(today);
+      expect(created, 1);
+      final txns = await (db.select(db.transactions)..where((t) => t.deletedAt.isNull())).get();
+      expect(txns.length, 1);
+      expect(txns.single.amount, 50000);
+      expect(txns.single.occurredAt, DateTime(2026, 6, 5));
+      final row = await (db.select(db.recurrings)..where((t) => t.id.equals(r.id))).getSingle();
+      expect(row.lastRunAt, DateTime(2026, 6, 5));
+    });
+
+    test('is idempotent within the same period', () async {
+      final (db, repo, wid) = await setup();
+      addTearDown(db.close);
+      await repo.addRecurring(amount: 50000, type: TransactionType.expense,
+          walletId: wid, cycle: RecurringCycle.monthly, startDate: DateTime(2026, 1, 5));
+      final today = DateTime(2026, 6, 13);
+      expect(await repo.materializeDueRecurrings(today), 1);
+      expect(await repo.materializeDueRecurrings(today), 0);
+      final txns = await (db.select(db.transactions)..where((t) => t.deletedAt.isNull())).get();
+      expect(txns.length, 1);
+    });
+
+    test('advances to a new period on a later day', () async {
+      final (db, repo, wid) = await setup();
+      addTearDown(db.close);
+      await repo.addRecurring(amount: 50000, type: TransactionType.expense,
+          walletId: wid, cycle: RecurringCycle.monthly, startDate: DateTime(2026, 1, 5));
+      expect(await repo.materializeDueRecurrings(DateTime(2026, 6, 13)), 1);
+      expect(await repo.materializeDueRecurrings(DateTime(2026, 7, 13)), 1);
+      final txns = await (db.select(db.transactions)..where((t) => t.deletedAt.isNull())).get();
+      expect(txns.length, 2);
+    });
+
+    test('dormant multiple periods still creates exactly one (latest)', () async {
+      final (db, repo, wid) = await setup();
+      addTearDown(db.close);
+      final r = await repo.addRecurring(amount: 50000, type: TransactionType.expense,
+          walletId: wid, cycle: RecurringCycle.monthly, startDate: DateTime(2026, 1, 5));
+      await (db.update(db.recurrings)..where((t) => t.id.equals(r.id)))
+          .write(RecurringsCompanion(lastRunAt: Value(DateTime(2026, 3, 5))));
+      final today = DateTime(2026, 6, 13);
+      expect(await repo.materializeDueRecurrings(today), 1);
+      final txns = await (db.select(db.transactions)..where((t) => t.deletedAt.isNull())).get();
+      expect(txns.length, 1);
+      expect(txns.single.occurredAt, DateTime(2026, 6, 5));
+    });
+
+    test('future startDate creates nothing', () async {
+      final (db, repo, wid) = await setup();
+      addTearDown(db.close);
+      await repo.addRecurring(amount: 50000, type: TransactionType.expense,
+          walletId: wid, cycle: RecurringCycle.monthly, startDate: DateTime(2026, 12, 5));
+      expect(await repo.materializeDueRecurrings(DateTime(2026, 6, 13)), 0);
+    });
+
+    test('skips soft-deleted rules', () async {
+      final (db, repo, wid) = await setup();
+      addTearDown(db.close);
+      final r = await repo.addRecurring(amount: 50000, type: TransactionType.expense,
+          walletId: wid, cycle: RecurringCycle.monthly, startDate: DateTime(2026, 1, 5));
+      await repo.softDeleteRecurring(r.id);
+      expect(await repo.materializeDueRecurrings(DateTime(2026, 6, 13)), 0);
+    });
+  });
 }
