@@ -16,6 +16,7 @@ class DiskCsvExporter implements CsvExporter {
   @override
   Future<String> save(String filename, String csv) async {
     final dir = await _targetDir();
+    await dir.create(recursive: true); // guard: Android external dir may not exist yet
     final file = File(p.join(dir.path, filename));
     await file.writeAsBytes(csvBytesWithBom(csv), flush: true);
     return file.path;
