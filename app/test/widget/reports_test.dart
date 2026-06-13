@@ -11,6 +11,7 @@ import 'package:moneynote/domain/reports.dart';
 import 'package:moneynote/features/reports/reports_screen.dart';
 import 'package:moneynote/features/reports/widgets/expense_pie_card.dart';
 import 'package:moneynote/features/reports/widgets/monthly_flow_card.dart';
+import 'package:moneynote/features/home/home_shell.dart';
 import 'package:moneynote/state/providers.dart';
 
 import '../drift_setup.dart';
@@ -137,6 +138,34 @@ void main() {
       await tester.tap(find.byKey(const Key('reportsPrevMonth')));
       await tester.pump();
       expect(find.text('Tháng 5/2026'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(Duration.zero);
+    });
+  });
+
+  group('dashboard entry to reports', () {
+    testWidgets('bar_chart icon on the dashboard opens ReportsScreen',
+        (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      await seedIfEmpty(db);
+      addTearDown(db.close);
+      bigView(tester);
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: buildTheme(AppThemeStyle.classic, Brightness.light),
+          home: const HomeShell(),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byKey(const Key('openReports')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('openReports')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Báo cáo'), findsOneWidget); // app bar của ReportsScreen
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(Duration.zero);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/features/categories/categories_screen.dart';
+import 'package:moneynote/features/reports/reports_screen.dart';
 import 'package:moneynote/features/dashboard/dashboard_screen.dart';
 import 'package:moneynote/features/settings/settings_screen.dart';
 import 'package:moneynote/features/transactions/add_transaction_screen.dart';
@@ -45,6 +46,15 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       appBar: AppBar(
         title: Text(_titles[_index]),
         actions: [
+          if (_index == 0)
+            IconButton(
+              key: const Key('openReports'),
+              icon: const Icon(Icons.bar_chart),
+              tooltip: 'Báo cáo',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ReportsScreen()),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () => Navigator.of(context).push(
