@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:moneynote/data/database.dart';
+import 'package:moneynote/domain/recurring.dart';
 
 const _uuid = Uuid();
 
@@ -163,6 +164,9 @@ class AppRepository {
           .write(
         TransactionsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
       );
+      await (db.update(db.recurrings)..where((t) => t.walletId.equals(id))).write(
+        RecurringsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
+      );
     });
   }
 
@@ -254,5 +258,121 @@ class AppRepository {
         updatedAt: Value(now),
       ));
     }
+  }
+
+  // ---- recurring rules ----
+
+  Stream<List<Recurring>> watchRecurrings() => (db.select(db.recurrings)
+        ..where((t) => t.deletedAt.isNull())
+        ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+      .watch();
+
+  void _validateRecurring(int amount, TransactionType type) {
+    if (amount <= 0) {
+      throw ArgumentError.value(amount, 'amount', 'phải > 0 (đồng VND)');
+    }
+    if (type == TransactionType.transfer) {
+      throw ArgumentError.value(
+          type, 'type', 'không được là transfer trong định kỳ v1');
+    }
+  }
+
+  Future<Recurring> addRecurring({
+    required int amount,
+    required TransactionType type,
+    String? categoryId,
+    required String walletId,
+    String note = '',
+    required RecurringCycle cycle,
+    required DateTime startDate,
+  }) async {
+    _validateRecurring(amount, type);
+    final now = DateTime.now();
+    final id = _uuid.v4();
+    final sd = DateTime(startDate.year, startDate.month, startDate.day);
+    await db.into(db.recurrings).insert(RecurringsCompanion.insert(
+          id: id,
+          amount: amount,
+          type: type,
+          categoryId: Value(categoryId),
+          walletId: walletId,
+          note: Value(note),
+          cycle: cycle,
+          startDate: sd,
+          createdAt: now,
+          updatedAt: now,
+        ));
+    return (db.select(db.recurrings)..where((t) => t.id.equals(id))).getSingle();
+  }
+
+  Future<void> updateRecurring(
+    String id, {
+    required int amount,
+    required TransactionType type,
+    String? categoryId,
+    required String walletId,
+    String note = '',
+    required RecurringCycle cycle,
+    required DateTime startDate,
+  }) async {
+    _validateRecurring(amount, type);
+    final sd = DateTime(startDate.year, startDate.month, startDate.day);
+    final existing =
+        await (db.select(db.recurrings)..where((t) => t.id.equals(id))).getSingle();
+    final anchorChanged = existing.cycle != cycle || existing.startDate != sd;
+    await (db.update(db.recurrings)..where((t) => t.id.equals(id))).write(
+      RecurringsCompanion(
+        amount: Value(amount),
+        type: Value(type),
+        categoryId: Value(categoryId),
+        walletId: Value(walletId),
+        note: Value(note),
+        cycle: Value(cycle),
+        startDate: Value(sd),
+        lastRunAt: anchorChanged ? const Value(null) : const Value.absent(),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> softDeleteRecurring(String id) async {
+    final now = DateTime.now();
+    await (db.update(db.recurrings)..where((t) => t.id.equals(id))).write(
+      RecurringsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
+    );
+  }
+
+  /// Creates the latest-due transaction for each live rule. Idempotent.
+  /// Returns the number created. [today] is injected for determinism/tests.
+  Future<int> materializeDueRecurrings(DateTime today) async {
+    final rules = await (db.select(db.recurrings)
+          ..where((t) => t.deletedAt.isNull()))
+        .get();
+    final now = DateTime.now();
+    var created = 0;
+    for (final r in rules) {
+      final occ = mostRecentOccurrence(r.startDate, r.cycle, today);
+      if (occ == null) continue;
+      final lastRun = r.lastRunAt == null
+          ? null
+          : DateTime(r.lastRunAt!.year, r.lastRunAt!.month, r.lastRunAt!.day);
+      if (lastRun != null && !occ.isAfter(lastRun)) continue;
+      await db.transaction(() async {
+        await addTransaction(
+          amount: r.amount,
+          type: r.type,
+          categoryId: r.categoryId,
+          walletId: r.walletId,
+          note: r.note,
+          occurredAt: occ,
+        );
+        await (db.update(db.recurrings)..where((t) => t.id.equals(r.id))).write(
+          RecurringsCompanion(
+              lastRunAt: Value(occ), updatedAt: Value(now)),
+        );
+      });
+      created++;
+    }
+    return created;
   }
 }

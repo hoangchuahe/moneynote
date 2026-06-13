@@ -35,6 +35,10 @@ final budgetsProvider = StreamProvider<List<Budget>>(
   (ref) => ref.watch(repositoryProvider).watchBudgets(),
 );
 
+final recurringsProvider = StreamProvider<List<Recurring>>(
+  (ref) => ref.watch(repositoryProvider).watchRecurrings(),
+);
+
 /// The month shown on the dashboard (first of month). Defaults to current month.
 final selectedMonthProvider = StateProvider<DateTime>((ref) {
   final now = DateTime.now();
