@@ -57,9 +57,12 @@ class Recurrings extends Table {
 ```
 
 ```dart
-// Index: materializeDueRecurrings quét rule còn sống mỗi lần mở app.
+// Partial index trên rule còn sống, sắp theo createdAt (như watchRecurrings) và
+// khớp filter `deleted_at IS NULL` mà materialize/watch dùng. Index thường trên
+// deleted_at KHÔNG phục vụ được scan `IS NULL` trong SQLite.
 Future<void> _ensureRecurringIndexes() => customStatement(
-    'CREATE INDEX IF NOT EXISTS idx_recurrings_deleted_at ON recurrings (deleted_at)');
+    'CREATE INDEX IF NOT EXISTS idx_recurrings_active '
+    'ON recurrings (created_at) WHERE deleted_at IS NULL');
 ```
 
 ## 4. Domain thuần — `domain/recurring.dart` (tạo mới)

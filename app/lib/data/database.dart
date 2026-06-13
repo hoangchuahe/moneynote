@@ -136,9 +136,12 @@ class AppDatabase extends _$AppDatabase {
       'CREATE UNIQUE INDEX IF NOT EXISTS uq_merchant_memories_merchant '
       'ON merchant_memories (merchant)');
 
+  /// Partial index over live rows, ordered like watchRecurrings (createdAt DESC)
+  /// and matching the `deletedAt IS NULL` filter materialize/watch use. A plain
+  /// index on deleted_at would not serve `IS NULL` scans in SQLite.
   Future<void> _ensureRecurringIndexes() => customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_recurrings_deleted_at '
-      'ON recurrings (deleted_at)');
+      'CREATE INDEX IF NOT EXISTS idx_recurrings_active '
+      'ON recurrings (created_at) WHERE deleted_at IS NULL');
 
   /// List/dashboard queries order by occurred_at and filter by wallet.
   Future<void> _ensureTransactionIndexes() async {

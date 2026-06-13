@@ -23,6 +23,7 @@ void main() {
     expect(row.amount, 50000);
     expect(row.type, TransactionType.expense);
     expect(row.cycle, RecurringCycle.monthly);
+    expect(row.note, 'Netflix');
     expect(row.startDate, DateTime(2026, 6, 5));
     expect(row.lastRunAt, isNull);
     expect(row.deletedAt, isNull);
