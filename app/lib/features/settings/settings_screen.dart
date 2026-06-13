@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/prefs.dart';
 import 'package:moneynote/core/theme.dart';
+import 'package:moneynote/features/recurring/recurring_screen.dart';
 import 'package:moneynote/state/providers.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -129,6 +130,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ],
                 ),
+              ),
+              const Divider(),
+              const _SectionHeader('Tự động'),
+              ListTile(
+                key: const Key('recurringRules'),
+                leading: const Icon(Icons.repeat),
+                title: const Text('Giao dịch định kỳ'),
+                subtitle: const Text('Quy tắc tự tạo giao dịch khi tới hạn'),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const RecurringScreen())),
               ),
               const SizedBox(height: 24),
             ],
