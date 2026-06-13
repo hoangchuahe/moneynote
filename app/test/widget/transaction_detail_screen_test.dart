@@ -5,8 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/data/repository.dart';
 import 'package:moneynote/data/seed.dart';
+import 'package:moneynote/features/dashboard/dashboard_screen.dart';
 import 'package:moneynote/features/transactions/add_transaction_screen.dart';
 import 'package:moneynote/features/transactions/transaction_detail_screen.dart';
+import 'package:moneynote/features/transactions/transaction_tile.dart';
+import 'package:moneynote/features/transactions/transactions_list_screen.dart';
 import 'package:moneynote/state/providers.dart';
 
 import '../drift_setup.dart';
@@ -276,6 +279,81 @@ void main() {
     await tester.pump();
     expect(find.text('Giao dịch không tồn tại'), findsNothing);
     await tester.pump(const Duration(milliseconds: 400));
+    await teardown(tester);
+  });
+
+  testWidgets('tapping a list row pushes the detail', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    await seedIfEmpty(db);
+    addTearDown(db.close);
+    bigView(tester);
+    final repo = AppRepository(db);
+    await tester.runAsync(() async {
+      final cats = await repo.watchCategories().first;
+      final anUong = cats.firstWhere((c) => c.name == 'Ăn uống');
+      final wallets = await repo.watchWallets().first;
+      await repo.addTransaction(
+          amount: 50000,
+          type: TransactionType.expense,
+          categoryId: anUong.id,
+          walletId: wallets.first.id);
+    });
+    await tester.pumpWidget(ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: const MaterialApp(home: Scaffold(body: TransactionsListScreen())),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byType(TransactionTile).first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(TransactionDetailScreen), findsOneWidget);
+    await teardown(tester);
+  });
+
+  testWidgets('tapping a dashboard recent tile pushes the detail',
+      (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    await seedIfEmpty(db);
+    addTearDown(db.close);
+    bigView(tester);
+    final repo = AppRepository(db);
+    await tester.runAsync(() async {
+      final cats = await repo.watchCategories().first;
+      final anUong = cats.firstWhere((c) => c.name == 'Ăn uống');
+      final wallets = await repo.watchWallets().first;
+      await repo.addTransaction(
+          amount: 50000,
+          type: TransactionType.expense,
+          categoryId: anUong.id,
+          walletId: wallets.first.id);
+    });
+    await tester.pumpWidget(ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: const MaterialApp(home: Scaffold(body: DashboardScreen())),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byType(TransactionTile).first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(TransactionDetailScreen), findsOneWidget);
+    await teardown(tester);
+  });
+
+  testWidgets('openTransactionDetail no-ops when the route is not current',
+      (tester) async {
+    late BuildContext hostCtx;
+    await tester.pumpWidget(MaterialApp(
+      home: Builder(builder: (c) {
+        hostCtx = c;
+        return const Scaffold();
+      }),
+    ));
+    Navigator.of(hostCtx).push(
+        MaterialPageRoute(builder: (_) => const Scaffold(body: Text('over'))));
+    await tester.pumpAndSettle();
+    openTransactionDetail(hostCtx, 'whatever');
+    await tester.pumpAndSettle();
+    expect(find.byType(TransactionDetailScreen), findsNothing);
     await teardown(tester);
   });
 }
