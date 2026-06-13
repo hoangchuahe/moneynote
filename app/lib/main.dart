@@ -3,12 +3,20 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/prefs.dart';
 import 'package:moneynote/core/theme.dart';
+import 'package:moneynote/data/repository.dart';
 import 'package:moneynote/data/seed.dart';
 import 'package:moneynote/features/home/home_shell.dart';
 import 'package:moneynote/state/providers.dart';
 
 final _seedProvider = FutureProvider<void>((ref) async {
-  await seedIfEmpty(ref.watch(databaseProvider));
+  final db = ref.watch(databaseProvider);
+  await seedIfEmpty(db);
+  // Best-effort: auto-create due recurring transactions. Never block launch.
+  try {
+    await AppRepository(db).materializeDueRecurrings(DateTime.now());
+  } catch (_) {
+    // Recurring is best-effort; a failure here must not stop the app starting.
+  }
 });
 
 void main() {
