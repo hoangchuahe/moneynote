@@ -1,10 +1,19 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moneynote/core/prefs.dart';
 import 'package:moneynote/core/theme.dart';
+import 'package:moneynote/data/database.dart';
+import 'package:moneynote/data/repository.dart';
+import 'package:moneynote/data/seed.dart';
 import 'package:moneynote/domain/reports.dart';
+import 'package:moneynote/features/reports/reports_screen.dart';
 import 'package:moneynote/features/reports/widgets/expense_pie_card.dart';
 import 'package:moneynote/features/reports/widgets/monthly_flow_card.dart';
+import 'package:moneynote/state/providers.dart';
+
+import '../drift_setup.dart';
 
 Widget host(Widget child) => MaterialApp(
       theme: buildTheme(AppThemeStyle.classic, Brightness.light),
@@ -19,6 +28,8 @@ void bigView(WidgetTester tester) {
 }
 
 void main() {
+  setUpAll(setupSqliteForTests);
+
   group('ExpensePieCard', () {
     testWidgets('renders legend with names, amounts and percents', (tester) async {
       bigView(tester);
@@ -68,6 +79,67 @@ void main() {
       await tester.pumpWidget(host(MonthlyFlowCard(flows: flows)));
       await tester.pump();
       expect(find.text('Chưa có thu chi nào'), findsOneWidget);
+    });
+  });
+
+  group('ReportsScreen', () {
+    Widget app(AppDatabase db, DateTime month) => ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            selectedMonthProvider.overrideWith((ref) => month),
+          ],
+          child: MaterialApp(
+            theme: buildTheme(AppThemeStyle.classic, Brightness.light),
+            home: const ReportsScreen(),
+          ),
+        );
+
+    testWidgets('shows the expense category for the selected month',
+        (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      await seedIfEmpty(db);
+      final repo = AppRepository(db);
+      final cats = await db.select(db.categories).get();
+      final food = cats.firstWhere((c) => c.name == 'Ăn uống');
+      final w = (await db.select(db.wallets).get()).first;
+      await repo.addTransaction(
+        amount: 250000,
+        type: TransactionType.expense,
+        categoryId: food.id,
+        walletId: w.id,
+        occurredAt: DateTime(2026, 6, 10),
+      );
+      addTearDown(db.close);
+      bigView(tester);
+
+      await tester.pumpWidget(app(db, DateTime(2026, 6, 1)));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+
+      expect(find.text('Báo cáo'), findsOneWidget);
+      expect(find.text('Tháng 6/2026'), findsOneWidget);
+      expect(find.text('Ăn uống'), findsWidgets);
+      expect(find.text('250.000 ₫'), findsWidgets);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(Duration.zero);
+    });
+
+    testWidgets('prev-month button moves the selected month', (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      await seedIfEmpty(db);
+      addTearDown(db.close);
+      bigView(tester);
+
+      await tester.pumpWidget(app(db, DateTime(2026, 6, 1)));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.tap(find.byKey(const Key('reportsPrevMonth')));
+      await tester.pump();
+      expect(find.text('Tháng 5/2026'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(Duration.zero);
     });
   });
 }
