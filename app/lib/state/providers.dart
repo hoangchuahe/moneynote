@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/prefs.dart';
 import 'package:moneynote/data/ai_client.dart';
+import 'package:moneynote/data/csv_export_service.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/data/repository.dart';
 import 'package:moneynote/domain/transaction_filter.dart';
@@ -15,6 +16,8 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 final repositoryProvider = Provider<AppRepository>(
   (ref) => AppRepository(ref.watch(databaseProvider)),
 );
+
+final csvExporterProvider = Provider<CsvExporter>((ref) => DiskCsvExporter());
 
 final walletsProvider = StreamProvider<List<Wallet>>(
   (ref) => ref.watch(repositoryProvider).watchWallets(),
