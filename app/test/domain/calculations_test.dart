@@ -156,4 +156,40 @@ void main() {
       expect(spentInMonth(txns, DateTime(2026, 5, 1), categoryId: 'food'), 99999);
     });
   });
+
+  group('categoryTotal', () {
+    Transaction ctx(int amount, String? categoryId,
+            {TransactionType type = TransactionType.expense}) =>
+        Transaction(
+          id: '$amount-$categoryId-${type.name}',
+          amount: amount,
+          type: type,
+          categoryId: categoryId,
+          walletId: 'w1',
+          toWalletId: null,
+          note: '',
+          occurredAt: DateTime(2026, 6, 10),
+          createdAt: DateTime(2026, 6, 10),
+          updatedAt: DateTime(2026, 6, 10),
+        );
+
+    final txns = [
+      ctx(50000, 'food'),
+      ctx(30000, 'food'),
+      ctx(20000, 'move'),
+      ctx(5000000, 'salary', type: TransactionType.income),
+      ctx(1000000, null, type: TransactionType.transfer),
+    ];
+
+    test('sums only the given category, all-time, type-agnostic', () {
+      expect(categoryTotal('food', txns), 80000);
+      expect(categoryTotal('salary', txns), 5000000);
+    });
+
+    test('excludes other categories and null-category rows', () {
+      expect(categoryTotal('move', txns), 20000);
+      expect(categoryTotal('nope', txns), 0);
+      expect(categoryTotal('food', const []), 0);
+    });
+  });
 }
