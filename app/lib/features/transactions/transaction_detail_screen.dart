@@ -40,13 +40,12 @@ class _TransactionDetailScreenState
   void _delete(Transaction t) {
     final repo = ref.read(repositoryProvider);
     final messenger = ScaffoldMessenger.of(context);
-    final route = ModalRoute.of(context)!;
     final navigator = Navigator.of(context);
     final clearance = pillClearance(context);
-    // Remove the route WITHOUT animation so the pop and the snackbar entrance
-    // animation don't overlap (overlap causes two SnackBar elements in the tree
-    // during the route transition, breaking find.byType(SnackBar) == single).
-    navigator.removeRoute(route);
+    // Pop FIRST (animated, so the back-slide is preserved); the _last cache in
+    // build() keeps the exiting frame from re-resolving to null and flashing the
+    // not-found guard. The snackbar then lands on the returned-to screen.
+    navigator.pop();
     repo.softDeleteTransaction(t.id);
     messenger
       ..hideCurrentSnackBar()

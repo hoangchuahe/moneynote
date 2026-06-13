@@ -242,7 +242,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('open'), findsOneWidget);
-    final snack = tester.widget<SnackBar>(find.byType(SnackBar));
+    // The pop animation can briefly render the messenger's SnackBar in both the
+    // exiting and entering Scaffolds; read the first (both carry the same margin).
+    final snack = tester.widgetList<SnackBar>(find.byType(SnackBar)).first;
     expect((snack.margin as EdgeInsets).bottom, greaterThanOrEqualTo(96));
     final remaining =
         await tester.runAsync(() => repo.watchAllTransactions().first);
