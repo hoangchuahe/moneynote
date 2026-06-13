@@ -25,4 +25,32 @@ void main() {
     expect((tint.a * 255.0).round(), 36);
     expect((tint.r * 255.0).round(), 0xEF);
   });
+
+  test('new icons map to their glyphs', () {
+    expect(categoryIcon('local_cafe'), Icons.local_cafe);
+    expect(categoryIcon('home'), Icons.home);
+    expect(categoryIcon('flight'), Icons.flight);
+    expect(categoryIcon('savings'), Icons.savings);
+    expect(categoryIcon('trending_up'), Icons.trending_up);
+  });
+
+  test('kCategoryIconNames is ordered, ends with the fallback, no dupes', () {
+    expect(kCategoryIconNames.length, greaterThanOrEqualTo(20));
+    expect(kCategoryIconNames.first, 'restaurant');
+    expect(kCategoryIconNames.last, 'category');
+    expect(kCategoryIconNames.toSet().length, kCategoryIconNames.length);
+    for (final n in kCategoryIconNames) {
+      if (n != 'category') {
+        expect(categoryIcon(n), isNot(Icons.category), reason: '$n must map');
+      }
+    }
+  });
+
+  test('kCategoryColors are 0xFF-opaque and de-duplicated', () {
+    expect(kCategoryColors.length, greaterThanOrEqualTo(10));
+    expect(kCategoryColors.toSet().length, kCategoryColors.length);
+    for (final c in kCategoryColors) {
+      expect((c >> 24) & 0xFF, 0xFF, reason: 'swatch must be fully opaque');
+    }
+  });
 }
