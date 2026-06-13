@@ -25,6 +25,17 @@ Widget budgetLeading(BuildContext context, Category? category) =>
           )
         : CategoryIconBox(iconName: category.icon, color: category.color);
 
+/// Maps a domain BudgetLevel to a theme colour (single source of truth shared by
+/// BudgetTile and the budget detail donut).
+Color budgetLevelColor(BuildContext context, BudgetLevel level) {
+  final money = moneyColorsOf(context);
+  return switch (level) {
+    BudgetLevel.over => money.expense,
+    BudgetLevel.warn => money.warn,
+    BudgetLevel.ok => Theme.of(context).colorScheme.primary,
+  };
+}
+
 class BudgetsScreen extends ConsumerWidget {
   const BudgetsScreen({super.key});
 
@@ -193,14 +204,10 @@ class BudgetTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final money = moneyColorsOf(context);
     final scheme = Theme.of(context).colorScheme;
-    final over = spent > limit;
-    final ratioRaw = limit <= 0 ? 0.0 : spent / limit;
-    final ratio = ratioRaw.clamp(0.0, 1.0);
-    final barColor = over
-        ? money.expense
-        : ratioRaw >= 0.8
-            ? money.warn
-            : scheme.primary;
+    final p = BudgetProgress(spent, limit);
+    final over = p.level == BudgetLevel.over;
+    final barColor = budgetLevelColor(context, p.level);
+    final ratio = p.ratio.clamp(0.0, 1.0);
     return ListTile(
       onTap: onTap,
       onLongPress: onLongPress,

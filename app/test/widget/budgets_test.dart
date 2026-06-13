@@ -92,4 +92,44 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
   });
+
+  testWidgets('ngân sách dưới 80% hiện màu primary (ok)', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    await seedIfEmpty(db);
+    final repo = AppRepository(db);
+    final cats = await db.select(db.categories).get();
+    final food = cats.firstWhere((c) => c.name == 'Ăn uống');
+    final w = (await db.select(db.wallets).get()).first;
+    await repo.upsertBudget(food.id, 100000);
+    await repo.addTransaction(
+        amount: 50000,
+        type: TransactionType.expense,
+        categoryId: food.id,
+        walletId: w.id);
+    addTearDown(db.close);
+
+    tester.view.physicalSize = const Size(800, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: MaterialApp(
+        theme: buildTheme(AppThemeStyle.classic, Brightness.light),
+        home: const BudgetsScreen(),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    final progress = tester.widget<LinearProgressIndicator>(
+        find.byType(LinearProgressIndicator).first);
+    final primary =
+        buildTheme(AppThemeStyle.classic, Brightness.light).colorScheme.primary;
+    expect(progress.color, primary);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  });
 }
