@@ -97,8 +97,6 @@ String exportFilename(ExportScope scope, DateTime now) {
     ExportScope.thisYear => 'thisyear',
     ExportScope.all => 'all',
   };
-  final stamp = '${now.year}'
-      '${now.month.toString().padLeft(2, '0')}'
-      '${now.day.toString().padLeft(2, '0')}';
+  final stamp = _isoDate(now).replaceAll('-', '');
   return 'moneynote-$slug-$stamp.csv';
 }
