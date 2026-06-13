@@ -20,6 +20,7 @@ class Wallets extends Table {
   IntColumn get type => intEnum<WalletType>()();
   IntColumn get initialBalance => integer().withDefault(const Constant(0))();
   TextColumn get currencyCode => text().withDefault(const Constant('VND'))();
+  IntColumn get color => integer().withDefault(const Constant(0xFF0B7A4F))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -110,7 +111,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -129,6 +130,7 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(recurrings);
             await _ensureRecurringIndexes();
           }
+          if (from < 7) await m.addColumn(wallets, wallets.color);
         },
       );
 

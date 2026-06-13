@@ -53,4 +53,38 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
   });
+
+  testWidgets('initialTransferFromWalletId opens transfer mode with from preset',
+      (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    await seedIfEmpty(db);
+    addTearDown(db.close);
+    final repo = AppRepository(db);
+    late String fromId;
+    await tester.runAsync(() async {
+      await repo.addWallet(name: 'Ngân hàng', type: WalletType.bank);
+      final wallets = await repo.watchWallets().first;
+      fromId = wallets.first.id;
+    });
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: MaterialApp(
+        home: AddTransactionScreen(initialTransferFromWalletId: fromId),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byKey(const Key('toWallet')), findsOneWidget); // transfer mode
+    final from = tester.widget<DropdownButtonFormField<String>>(
+        find.byKey(const Key('fromWallet')));
+    expect(from.initialValue, fromId);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  });
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:moneynote/core/input_formatters.dart';
 import 'package:moneynote/core/money.dart';
 import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/calculations.dart';
 import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
+import 'package:moneynote/features/wallets/wallet_detail_screen.dart';
 import 'package:moneynote/state/providers.dart';
 
 String walletTypeLabel(WalletType t) => switch (t) {
@@ -19,6 +19,40 @@ IconData walletTypeIcon(WalletType t) => switch (t) {
       WalletType.bank => Icons.account_balance,
       WalletType.ewallet => Icons.smartphone,
     };
+
+/// The 6 wallet swatches from the design's add-wallet color picker.
+const kWalletColors = <int>[
+  0xFF0B7A4F, 0xFF2A6FDB, 0xFFD97A4A, 0xFF9B5DE5, 0xFFE0457B, 0xFF1F8A70,
+];
+
+/// Tinted box for a wallet: the type glyph in the wallet's color.
+class WalletIconBox extends StatelessWidget {
+  const WalletIconBox({
+    super.key,
+    required this.color,
+    required this.type,
+    this.size = 36,
+  });
+
+  final int color;
+  final WalletType type;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Color(color);
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: c.withAlpha(36),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(walletTypeIcon(type), size: size * 0.5, color: c),
+    );
+  }
+}
 
 class WalletsScreen extends ConsumerWidget {
   const WalletsScreen({super.key});
@@ -38,17 +72,7 @@ class WalletsScreen extends ConsumerWidget {
       children: [
         for (final w in wallets)
           ListTile(
-            leading: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(walletTypeIcon(w.type),
-                  size: 18,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer),
-            ),
+            leading: WalletIconBox(color: w.color, type: w.type),
             title: Text(w.name),
             subtitle: Text(walletTypeLabel(w.type)),
             trailing: Text(formatVnd(balanceOf(w, txns)),
@@ -56,6 +80,9 @@ class WalletsScreen extends ConsumerWidget {
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
                     fontFeatures: [FontFeature.tabularFigures()])),
+            onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) => WalletDetailScreen(w.id))),
             onLongPress: () => _confirmDelete(context, ref, w),
           ),
       ],
@@ -85,58 +112,3 @@ class WalletsScreen extends ConsumerWidget {
   }
 }
 
-Future<void> showAddWalletDialog(BuildContext context, WidgetRef ref) async {
-  final nameCtrl = TextEditingController();
-  final balCtrl = TextEditingController(text: '0');
-  var type = WalletType.cash;
-  await showDialog<void>(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setState) => AlertDialog(
-        title: const Text('Thêm ví'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Tên ví')),
-            TextField(
-              controller: balCtrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [ThousandsInputFormatter()],
-              decoration: const InputDecoration(labelText: 'Số dư ban đầu'),
-            ),
-            DropdownButton<WalletType>(
-              value: type,
-              isExpanded: true,
-              items: [
-                for (final t in WalletType.values)
-                  DropdownMenuItem(value: t, child: Text(walletTypeLabel(t))),
-              ],
-              onChanged: (v) => setState(() => type = v ?? WalletType.cash),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Huỷ')),
-          FilledButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              if (name.isEmpty) return;
-              ref.read(repositoryProvider).addWallet(
-                    name: name,
-                    type: type,
-                    initialBalance: parseVndInput(balCtrl.text),
-                  );
-              Navigator.pop(ctx);
-            },
-            child: const Text('Lưu'),
-          ),
-        ],
-      ),
-    ),
-  );
-  nameCtrl.dispose();
-  balCtrl.dispose();
-}

@@ -11,6 +11,7 @@ import 'package:moneynote/features/home/home_shell.dart';
 import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
 import 'package:moneynote/features/settings/settings_screen.dart';
 import 'package:moneynote/features/transactions/add_transaction_screen.dart';
+import 'package:moneynote/features/wallets/wallet_edit_screen.dart';
 import 'package:moneynote/state/providers.dart';
 
 import '../drift_setup.dart';
@@ -109,7 +110,7 @@ void main() {
     await tester.pump(Duration.zero);
   });
 
-  testWidgets('Ví header + opens the add-wallet dialog', (tester) async {
+  testWidgets('Ví header + opens WalletEditScreen', (tester) async {
     final db = await setupDb();
     addTearDown(db.close);
     bigView(tester);
@@ -119,7 +120,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.byTooltip('Thêm ví'));
     await tester.pumpAndSettle();
-    expect(find.text('Thêm ví'), findsOneWidget); // AlertDialog title
+    expect(find.byType(WalletEditScreen), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);

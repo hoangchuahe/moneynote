@@ -11,9 +11,11 @@ import 'package:moneynote/state/providers.dart';
 class AddTransactionScreen extends ConsumerStatefulWidget {
   /// When [existing] is set the screen edits that transaction in place
   /// instead of creating a new one.
-  const AddTransactionScreen({super.key, this.existing});
+  const AddTransactionScreen(
+      {super.key, this.existing, this.initialTransferFromWalletId});
 
   final Transaction? existing;
+  final String? initialTransferFromWalletId;
 
   @override
   ConsumerState<AddTransactionScreen> createState() =>
@@ -48,6 +50,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       _walletId = t.walletId;
       _toWalletId = t.toWalletId;
       _date = t.occurredAt;
+    } else if (widget.initialTransferFromWalletId != null) {
+      _type = TransactionType.transfer;
+      _walletId = widget.initialTransferFromWalletId;
     }
   }
 

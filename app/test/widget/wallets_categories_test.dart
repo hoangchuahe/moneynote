@@ -32,6 +32,17 @@ void main() {
     await tester.pump(Duration.zero);
   });
 
+  testWidgets('WalletIconBox renders the type glyph in the wallet color',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(
+        body: WalletIconBox(color: 0xFF2A6FDB, type: WalletType.bank),
+      ),
+    ));
+    final icon = tester.widget<Icon>(find.byIcon(Icons.account_balance));
+    expect(icon.color, const Color(0xFF2A6FDB));
+  });
+
   testWidgets('danh mục Ăn uống hiện icon restaurant', (tester) async {
     final db = await setupDb();
     addTearDown(db.close);
