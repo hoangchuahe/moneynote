@@ -20,6 +20,40 @@ IconData walletTypeIcon(WalletType t) => switch (t) {
       WalletType.ewallet => Icons.smartphone,
     };
 
+/// The 6 wallet swatches from the design's add-wallet color picker.
+const kWalletColors = <int>[
+  0xFF0B7A4F, 0xFF2A6FDB, 0xFFD97A4A, 0xFF9B5DE5, 0xFFE0457B, 0xFF1F8A70,
+];
+
+/// Tinted box for a wallet: the type glyph in the wallet's color.
+class WalletIconBox extends StatelessWidget {
+  const WalletIconBox({
+    super.key,
+    required this.color,
+    required this.type,
+    this.size = 36,
+  });
+
+  final int color;
+  final WalletType type;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Color(color);
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: c.withAlpha(36),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(walletTypeIcon(type), size: size * 0.5, color: c),
+    );
+  }
+}
+
 class WalletsScreen extends ConsumerWidget {
   const WalletsScreen({super.key});
 
@@ -38,17 +72,7 @@ class WalletsScreen extends ConsumerWidget {
       children: [
         for (final w in wallets)
           ListTile(
-            leading: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(walletTypeIcon(w.type),
-                  size: 18,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer),
-            ),
+            leading: WalletIconBox(color: w.color, type: w.type),
             title: Text(w.name),
             subtitle: Text(walletTypeLabel(w.type)),
             trailing: Text(formatVnd(balanceOf(w, txns)),
