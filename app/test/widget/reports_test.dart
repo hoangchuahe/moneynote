@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moneynote/core/prefs.dart';
 import 'package:moneynote/core/theme.dart';
+import 'package:moneynote/domain/reports.dart';
 import 'package:moneynote/features/reports/widgets/expense_pie_card.dart';
+import 'package:moneynote/features/reports/widgets/monthly_flow_card.dart';
 
 Widget host(Widget child) => MaterialApp(
       theme: buildTheme(AppThemeStyle.classic, Brightness.light),
@@ -39,6 +41,33 @@ void main() {
       await tester.pumpWidget(host(const ExpensePieCard(slices: [])));
       await tester.pump();
       expect(find.text('Chưa có chi tiêu tháng này'), findsOneWidget);
+    });
+  });
+
+  group('MonthlyFlowCard', () {
+    testWidgets('renders Thu/Chi legend and month labels', (tester) async {
+      bigView(tester);
+      final flows = [
+        for (var m = 1; m <= 6; m++)
+          MonthlyFlow(DateTime(2026, m, 1), 1000000 * m, 500000 * m),
+      ];
+      await tester.pumpWidget(host(MonthlyFlowCard(flows: flows)));
+      await tester.pump();
+
+      expect(find.text('Thu'), findsOneWidget);
+      expect(find.text('Chi'), findsOneWidget);
+      expect(find.text('T1'), findsOneWidget);
+      expect(find.text('T6'), findsOneWidget);
+    });
+
+    testWidgets('shows empty state when all months are zero', (tester) async {
+      bigView(tester);
+      final flows = [
+        for (var m = 1; m <= 6; m++) MonthlyFlow(DateTime(2026, m, 1), 0, 0),
+      ];
+      await tester.pumpWidget(host(MonthlyFlowCard(flows: flows)));
+      await tester.pump();
+      expect(find.text('Chưa có thu chi nào'), findsOneWidget);
     });
   });
 }
