@@ -1,6 +1,13 @@
 import 'package:moneynote/data/database.dart';
 
-enum ExportScope { thisMonth, last3Months, thisYear, all }
+enum ExportScope {
+  thisMonth,
+
+  /// Current month plus the two preceding months (3 months total, current included).
+  last3Months,
+  thisYear,
+  all,
+}
 
 /// Half-open range [start, end): start INCLUDED, end EXCLUDED.
 /// null bound = unbounded on that side (used by [ExportScope.all]).
