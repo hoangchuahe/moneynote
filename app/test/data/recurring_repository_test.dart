@@ -98,5 +98,18 @@ void main() {
       final row = await (db.select(db.recurrings)..where((t) => t.id.equals(r.id))).getSingle();
       expect(row.deletedAt, isNotNull);
     });
+
+    test('softDeleteRecurring marks the rule deleted and drops it from watch', () async {
+      final (db, repo) = await setup();
+      addTearDown(db.close);
+      final w = (await db.select(db.wallets).get()).first;
+      final r = await repo.addRecurring(amount: 50000, type: TransactionType.expense,
+          walletId: w.id, cycle: RecurringCycle.monthly, startDate: DateTime(2026, 6, 5));
+      await repo.softDeleteRecurring(r.id);
+      final row = await (db.select(db.recurrings)..where((t) => t.id.equals(r.id))).getSingle();
+      expect(row.deletedAt, isNotNull);
+      final live = await (db.select(db.recurrings)..where((t) => t.deletedAt.isNull())).get();
+      expect(live, isEmpty);
+    });
   });
 }
