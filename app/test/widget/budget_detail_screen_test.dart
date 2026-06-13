@@ -73,7 +73,7 @@ void main() {
     expect(find.text('Ăn uống · Ngân sách'), findsOneWidget);
     expect(find.text('70%'), findsOneWidget);
     expect(find.text('700.000 ₫'), findsOneWidget); // Đã chi
-    expect(find.text('300.000 ₫'), findsWidgets); // Còn lại (+ cơm txn tile)
+    expect(find.text('300.000 ₫'), findsNWidgets(2)); // Còn lại stat + cơm txn tile
     expect(find.text('1.000.000 ₫'), findsOneWidget); // Hạn mức
     expect(find.text('phở'), findsOneWidget);
     expect(find.text('cơm'), findsOneWidget);
