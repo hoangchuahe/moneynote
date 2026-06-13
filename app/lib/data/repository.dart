@@ -168,9 +168,16 @@ class AppRepository {
 
   Future<void> softDeleteCategory(String id) async {
     final now = DateTime.now();
-    await (db.update(db.categories)..where((t) => t.id.equals(id))).write(
-      CategoriesCompanion(deletedAt: Value(now), updatedAt: Value(now)),
-    );
+    await db.transaction(() async {
+      await (db.update(db.categories)..where((t) => t.id.equals(id))).write(
+        CategoriesCompanion(deletedAt: Value(now), updatedAt: Value(now)),
+      );
+      await (db.update(db.merchantMemories)
+            ..where((t) => t.categoryId.equals(id)))
+          .write(
+        MerchantMemoriesCompanion(deletedAt: Value(now), updatedAt: Value(now)),
+      );
+    });
   }
 
   /// Returns the learned Category for a normalized merchant, or null.

@@ -49,4 +49,46 @@ void main() {
       throwsA(anything),
     );
   });
+
+  test('softDeleteCategory soft-deletes the merchant memory pointing to it',
+      () async {
+    final c = await repo.addCategory(name: 'Cà phê', type: CategoryType.expense);
+    await repo.upsertMerchant('highlands', c.id);
+
+    await repo.softDeleteCategory(c.id);
+
+    final mem = await (db.select(db.merchantMemories)
+          ..where((t) => t.merchant.equals('highlands')))
+        .getSingle();
+    expect(mem.deletedAt, isNotNull);
+  });
+
+  test('softDeleteCategory soft-deletes ALL merchant memories for that category',
+      () async {
+    final c = await repo.addCategory(name: 'Ăn uống', type: CategoryType.expense);
+    await repo.upsertMerchant('highlands', c.id);
+    await repo.upsertMerchant('phúc long', c.id);
+
+    await repo.softDeleteCategory(c.id);
+
+    final rows = await (db.select(db.merchantMemories)
+          ..where((t) => t.categoryId.equals(c.id)))
+        .get();
+    expect(rows, hasLength(2));
+    expect(rows.every((m) => m.deletedAt != null), isTrue);
+  });
+
+  test('re-learning a merchant after its category was deleted still works',
+      () async {
+    final c1 = await repo.addCategory(name: 'Cà phê', type: CategoryType.expense);
+    await repo.upsertMerchant('highlands', c1.id);
+    await repo.softDeleteCategory(c1.id);
+
+    final c2 = await repo.addCategory(name: 'Ăn uống', type: CategoryType.expense);
+    await repo.upsertMerchant('highlands', c2.id);
+
+    final got = await repo.lookupMerchant('highlands');
+    expect(got, isNotNull);
+    expect(got!.id, c2.id);
+  });
 }
