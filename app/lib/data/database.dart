@@ -12,6 +12,8 @@ enum CategoryType { income, expense }
 
 enum WalletType { cash, bank, ewallet }
 
+enum RecurringCycle { daily, weekly, monthly, yearly }
+
 class Wallets extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
@@ -85,12 +87,30 @@ class Budgets extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Wallets, Categories, Transactions, MerchantMemories, Budgets])
+class Recurrings extends Table {
+  TextColumn get id => text()();
+  IntColumn get amount => integer()(); // đồng VND, always > 0
+  IntColumn get type => intEnum<TransactionType>()(); // income | expense (no transfer)
+  TextColumn get categoryId => text().nullable().references(Categories, #id)();
+  TextColumn get walletId => text().references(Wallets, #id)();
+  TextColumn get note => text().withDefault(const Constant(''))();
+  IntColumn get cycle => intEnum<RecurringCycle>()();
+  DateTimeColumn get startDate => dateTime()(); // anchor / first occurrence (date-only)
+  DateTimeColumn get lastRunAt => dateTime().nullable()(); // occurredAt of last auto-created txn
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Wallets, Categories, Transactions, MerchantMemories, Budgets, Recurrings])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -98,18 +118,27 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
           await _ensureMerchantIndex();
           await _ensureTransactionIndexes();
+          await _ensureRecurringIndexes();
         },
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.createTable(merchantMemories);
           if (from < 3) await _ensureMerchantIndex();
           if (from < 4) await m.createTable(budgets);
           if (from < 5) await _ensureTransactionIndexes();
+          if (from < 6) {
+            await m.createTable(recurrings);
+            await _ensureRecurringIndexes();
+          }
         },
       );
 
   Future<void> _ensureMerchantIndex() => customStatement(
       'CREATE UNIQUE INDEX IF NOT EXISTS uq_merchant_memories_merchant '
       'ON merchant_memories (merchant)');
+
+  Future<void> _ensureRecurringIndexes() => customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_recurrings_deleted_at '
+      'ON recurrings (deleted_at)');
 
   /// List/dashboard queries order by occurred_at and filter by wallet.
   Future<void> _ensureTransactionIndexes() async {
