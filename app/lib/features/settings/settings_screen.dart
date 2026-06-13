@@ -202,16 +202,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       categoryNames: {for (final c in cats) c.id: c.name},
       walletNames: {for (final w in wallets) w.id: w.name},
     );
-    final path =
-        await ref.read(csvExporterProvider).save(exportFilename(scope, now), csv);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Đã lưu: $path'),
-      action: SnackBarAction(
-        label: 'Sao chép',
-        onPressed: () => Clipboard.setData(ClipboardData(text: path)),
-      ),
-    ));
+    try {
+      final path = await ref
+          .read(csvExporterProvider)
+          .save(exportFilename(scope, now), csv);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Đã lưu: $path'),
+        action: SnackBarAction(
+          label: 'Sao chép',
+          onPressed: () => Clipboard.setData(ClipboardData(text: path)),
+        ),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Lỗi khi lưu file: $e')));
+    }
   }
 
   String _toneLabel(Tone t) => switch (t) {
