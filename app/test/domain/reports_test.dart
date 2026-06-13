@@ -53,4 +53,35 @@ void main() {
       expect(expenseByCategory([], DateTime(2026, 6, 1)), isEmpty);
     });
   });
+
+  group('monthlyFlow', () {
+    test('returns N months ending at endMonth, oldest first', () {
+      final r = monthlyFlow([], DateTime(2026, 6, 1), months: 6);
+      expect(r.length, 6);
+      expect(r.first.month, DateTime(2026, 1, 1));
+      expect(r.last.month, DateTime(2026, 6, 1));
+    });
+
+    test('income and expense per month, transfers excluded', () {
+      final txns = [
+        etx(5000000, 'salary', DateTime(2026, 6, 5), type: TransactionType.income),
+        etx(200000, 'food', DateTime(2026, 6, 6)),
+        etx(1000000, null, DateTime(2026, 6, 7), type: TransactionType.transfer),
+        etx(300000, 'food', DateTime(2026, 5, 6)),
+      ];
+      final r = monthlyFlow(txns, DateTime(2026, 6, 1), months: 6);
+      final june = r.firstWhere((f) => f.month == DateTime(2026, 6, 1));
+      final may = r.firstWhere((f) => f.month == DateTime(2026, 5, 1));
+      expect(june.income, 5000000);
+      expect(june.expense, 200000); // transfer loại
+      expect(may.expense, 300000);
+    });
+
+    test('empty months are zero and window crosses the year boundary', () {
+      final r = monthlyFlow([], DateTime(2026, 1, 1), months: 3);
+      expect(r.map((f) => f.month).toList(),
+          [DateTime(2025, 11, 1), DateTime(2025, 12, 1), DateTime(2026, 1, 1)]);
+      expect(r.every((f) => f.income == 0 && f.expense == 0), isTrue);
+    });
+  });
 }
