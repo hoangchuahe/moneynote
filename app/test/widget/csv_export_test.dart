@@ -167,4 +167,54 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
   });
+
+  testWidgets('export sorts rows ascending by date regardless of input order',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase(NativeDatabase.memory());
+    await seedIfEmpty(db);
+    final repo = AppRepository(db);
+    final food = (await db.select(db.categories).get())
+        .firstWhere((c) => c.name == 'Ăn uống');
+    final w = (await db.select(db.wallets).get()).first;
+    // Insert the newer one first so the provider's desc order is NOT already
+    // ascending — the CSV order therefore proves the controller's sort.
+    await repo.addTransaction(
+      amount: 20000,
+      type: TransactionType.expense,
+      categoryId: food.id,
+      walletId: w.id,
+      occurredAt: DateTime(2026, 6, 20),
+    );
+    await repo.addTransaction(
+      amount: 10000,
+      type: TransactionType.expense,
+      categoryId: food.id,
+      walletId: w.id,
+      occurredAt: DateTime(2026, 6, 5),
+    );
+    addTearDown(db.close);
+    bigView(tester);
+
+    final fake = FakeCsvExporter();
+    await tester.pumpWidget(app(db, fake));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Xuất CSV'));
+    await tester.pumpAndSettle();
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Tất cả'));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pumpAndSettle();
+
+    final csv = fake.csv!;
+    expect(csv, contains('2026-06-05'));
+    expect(csv, contains('2026-06-20'));
+    expect(csv.indexOf('2026-06-05'), lessThan(csv.indexOf('2026-06-20')));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  });
 }
