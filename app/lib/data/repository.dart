@@ -75,6 +75,26 @@ class AppRepository {
         .getSingle();
   }
 
+  /// Edits an existing category in place (partial companion). Touches only the
+  /// edited fields + updatedAt; createdAt / isDefault / deletedAt survive.
+  Future<void> updateCategory({
+    required String id,
+    required String name,
+    required CategoryType type,
+    required String icon,
+    required int color,
+  }) async {
+    await (db.update(db.categories)..where((t) => t.id.equals(id))).write(
+      CategoriesCompanion(
+        name: Value(name),
+        type: Value(type),
+        icon: Value(icon),
+        color: Value(color),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   void _validateTransaction(
       int amount, TransactionType type, String walletId, String? toWalletId) {
     if (amount <= 0) {
