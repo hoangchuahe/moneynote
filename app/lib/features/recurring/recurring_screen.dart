@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/money.dart';
 import 'package:moneynote/core/theme.dart';
+import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/recurring.dart';
 import 'package:moneynote/features/recurring/recurring_edit_screen.dart';
@@ -28,7 +29,10 @@ class RecurringScreen extends ConsumerWidget {
         child: const Icon(Icons.add),
       ),
       body: rules.isEmpty
-          ? const Center(child: Text('Chưa có giao dịch định kỳ'))
+          ? const EmptyState(
+              icon: Icons.repeat,
+              title: 'Chưa có giao dịch định kỳ',
+              hint: 'Bấm + để thêm quy tắc tự lặp')
           : ListView(
               children: [
                 for (final r in rules)

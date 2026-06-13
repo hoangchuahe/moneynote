@@ -100,7 +100,9 @@ void main() {
     await tester.tap(find.byKey(const Key('recurringRules')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Giao dịch định kỳ'), findsWidgets);
+    // AppBar of RecurringScreen — proves navigation actually landed there
+    // (a plain find.text would also match the Settings tile still on the stack).
+    expect(find.widgetWithText(AppBar, 'Giao dịch định kỳ'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
