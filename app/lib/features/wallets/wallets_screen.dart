@@ -5,6 +5,7 @@ import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/calculations.dart';
 import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
+import 'package:moneynote/features/wallets/wallet_detail_screen.dart';
 import 'package:moneynote/state/providers.dart';
 
 String walletTypeLabel(WalletType t) => switch (t) {
@@ -79,6 +80,9 @@ class WalletsScreen extends ConsumerWidget {
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
                     fontFeatures: [FontFeature.tabularFigures()])),
+            onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) => WalletDetailScreen(w.id))),
             onLongPress: () => _confirmDelete(context, ref, w),
           ),
       ],

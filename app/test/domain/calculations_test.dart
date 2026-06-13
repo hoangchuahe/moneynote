@@ -6,6 +6,7 @@ Wallet wallet(String id, {int initial = 0}) => Wallet(
       id: id,
       name: id,
       type: WalletType.cash,
+      color: 0xFF0B7A4F,
       initialBalance: initial,
       currencyCode: 'VND',
       createdAt: DateTime(2026, 1, 1),
