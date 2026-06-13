@@ -49,4 +49,19 @@ void main() {
     expect(text.maxLines, isNull);
     expect(text.overflow, isNot(TextOverflow.ellipsis));
   });
+
+  testWidgets('single-child section draws no divider', (tester) async {
+    await tester.pumpWidget(host(const InsetSection(children: [
+      InsetRow(title: 'chỉ một hàng'),
+    ])));
+    expect(find.byType(Divider), findsNothing);
+  });
+
+  testWidgets('null leading still reserves the 24-wide slot', (tester) async {
+    await tester.pumpWidget(host(const InsetSection(children: [
+      InsetRow(title: 'không có icon'),
+    ])));
+    final boxes = tester.widgetList<SizedBox>(find.byType(SizedBox));
+    expect(boxes.any((b) => b.width == 24), isTrue);
+  });
 }
