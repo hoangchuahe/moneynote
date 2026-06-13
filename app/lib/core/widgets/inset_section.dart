@@ -36,15 +36,19 @@ class InsetSection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
             child: Text(header!, style: caption),
           ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          clipBehavior: Clip.antiAlias, // keep row InkWell ripples inside the radius
-          decoration: BoxDecoration(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          // Material (not a plain Container) so ListTile/InkWell children paint
+          // their ink correctly; antiAlias clips ripples to the rounded corners.
+          child: Material(
             color: cs.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: cs.outlineVariant, width: 0.6),
+            clipBehavior: Clip.antiAlias,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: cs.outlineVariant, width: 0.6),
+            ),
+            child: Column(children: rows),
           ),
-          child: Column(children: rows),
         ),
         if (footer != null)
           Padding(

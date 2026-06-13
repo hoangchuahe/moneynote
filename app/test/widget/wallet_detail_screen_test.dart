@@ -26,6 +26,10 @@ void main() {
   }
 
   Future<void> pumpDetail(WidgetTester tester, AppDatabase db, String id) async {
+    // Tear down any prior tree first so a route pushed in an earlier sub-scenario
+    // (e.g. AddTransactionScreen) doesn't linger offstage under a reused Navigator.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
     await tester.pumpWidget(ProviderScope(
       overrides: [databaseProvider.overrideWithValue(db)],
       child: MaterialApp(home: WalletDetailScreen(id)),
@@ -92,7 +96,9 @@ void main() {
     });
     await pumpDetail(tester, db, aId);
     final title = tester.widget<Text>(find.text('Ví A · Ngân hàng'));
-    expect(title.style?.color?.toARGB32(), Colors.black87.toARGB32());
+    // Adaptive foreground picks the black family (RGB 0,0,0) for a pale wallet;
+    // assert RGB only (alpha is the header's 82% tint), not white.
+    expect(title.style!.color!.toARGB32() & 0x00FFFFFF, 0x000000);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
   });

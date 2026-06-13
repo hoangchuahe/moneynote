@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/money.dart';
+import 'package:moneynote/core/widgets/inset_section.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/calculations.dart';
 import 'package:moneynote/features/transactions/add_transaction_screen.dart';
@@ -10,97 +11,22 @@ import 'package:moneynote/features/wallets/wallet_edit_screen.dart';
 import 'package:moneynote/features/wallets/wallets_screen.dart';
 import 'package:moneynote/state/providers.dart';
 
-/// A grouped section that hosts [ListTile]-based children correctly.
-/// Uses [Material] as the background so ink splashes work, unlike
-/// [InsetSection] which uses a plain [Container]/[DecoratedBox].
-class _TxnSection extends StatelessWidget {
-  const _TxnSection({required this.header, required this.children});
-
-  final String header;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final caption = TextStyle(fontSize: 13, color: cs.onSurfaceVariant);
-    final rows = <Widget>[];
-    for (var i = 0; i < children.length; i++) {
-      if (i > 0) {
-        rows.add(const Divider(height: 0.5, thickness: 0.5, indent: 56));
-      }
-      rows.add(children[i]);
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-          child: Text(header, style: caption),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Material(
-              color: cs.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: cs.outlineVariant, width: 0.6),
-              ),
-              child: Column(children: rows),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class WalletDetailScreen extends ConsumerStatefulWidget {
+/// Read-only wallet detail: a color-tinted header (name · type, balance,
+/// Chuyển/Sửa) over the wallet's recent transactions.
+class WalletDetailScreen extends ConsumerWidget {
   const WalletDetailScreen(this.walletId, {super.key});
 
   final String walletId;
 
   @override
-  ConsumerState<WalletDetailScreen> createState() => _WalletDetailScreenState();
-}
-
-class _WalletDetailScreenState extends ConsumerState<WalletDetailScreen> {
-  /// In widget-test harness, [pumpWidget] reuses the Navigator element and its
-  /// route stack across calls (Flutter element-reuse semantics).  When this
-  /// screen IS the home route (isFirst == true) but a previously-pushed route
-  /// sits on top (isCurrent == false), pop back so the screen is onstage.
-  /// This is a no-op in production because in production this screen is always
-  /// pushed on top of WalletsScreen (isFirst == false).
-  void _popToSelfIfNeeded() {
-    if (!mounted) return;
-    final route = ModalRoute.of(context);
-    if (route != null && route.isFirst && !route.isCurrent) {
-      Navigator.of(context).popUntil((r) => r.isFirst);
-    }
-  }
-
-  @override
-  void didUpdateWidget(WalletDetailScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Called when pumpWidget supplies a new WalletDetailScreen to the same
-    // element (element reuse). Schedule the pop after the frame so the
-    // Navigator's own didUpdateWidget has also run.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _popToSelfIfNeeded());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Watch all three providers eagerly so they all start loading in the same
-    // render cycle (avoids a sequential: wallets-loads → txns-loads chain that
-    // would need extra pumps in tests).
+  Widget build(BuildContext context, WidgetRef ref) {
     final wallets = ref.watch(walletsProvider).valueOrNull ?? [];
     final txns = ref.watch(transactionsProvider).valueOrNull ?? [];
     final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
 
     Wallet? found;
     for (final x in wallets) {
-      if (x.id == widget.walletId) {
+      if (x.id == walletId) {
         found = x;
         break;
       }
@@ -118,6 +44,8 @@ class _WalletDetailScreenState extends ConsumerState<WalletDetailScreen> {
         .take(15)
         .toList();
     final color = Color(w.color);
+    // White text on a dark wallet colour, near-black on a pale one (the palette
+    // is all mid-to-dark, but a custom/future light colour stays legible).
     final onColor =
         ThemeData.estimateBrightnessForColor(color) == Brightness.dark
             ? Colors.white
@@ -173,7 +101,8 @@ class _WalletDetailScreenState extends ConsumerState<WalletDetailScreen> {
                     child: Column(
                       children: [
                         Text('${w.name} · ${walletTypeLabel(w.type)}',
-                            style: TextStyle(fontSize: 14, color: onColor)),
+                            style: TextStyle(
+                                fontSize: 14, color: onColor.withAlpha(209))),
                         const SizedBox(height: 6),
                         Text(formatVnd(balanceOf(w, txns)),
                             style: TextStyle(
@@ -193,8 +122,7 @@ class _WalletDetailScreenState extends ConsumerState<WalletDetailScreen> {
                                 () => Navigator.of(context).push(
                                     MaterialPageRoute(
                                         builder: (_) => AddTransactionScreen(
-                                            initialTransferFromWalletId:
-                                                w.id)))),
+                                            initialTransferFromWalletId: w.id)))),
                             const SizedBox(width: 24),
                             action(
                                 Icons.tune,
@@ -219,7 +147,7 @@ class _WalletDetailScreenState extends ConsumerState<WalletDetailScreen> {
               child: Center(child: Text('Chưa có giao dịch')),
             )
           else
-            _TxnSection(
+            InsetSection(
               header: 'Gần đây',
               children: [
                 for (final t in mine)
