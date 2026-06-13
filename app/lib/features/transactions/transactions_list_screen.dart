@@ -6,7 +6,7 @@ import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/transaction_filter.dart';
 import 'package:moneynote/domain/txn_grouping.dart';
 import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
-import 'package:moneynote/features/transactions/add_transaction_screen.dart';
+import 'package:moneynote/features/transactions/transaction_detail_screen.dart';
 import 'package:moneynote/features/transactions/transaction_tile.dart';
 import 'package:moneynote/state/providers.dart';
 
@@ -112,11 +112,7 @@ class TransactionsListScreen extends ConsumerWidget {
                         child: TransactionTile(
                           txn: t,
                           category: catById[t.categoryId],
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (_) =>
-                                    AddTransactionScreen(existing: t)),
-                          ),
+                          onTap: () => openTransactionDetail(context, t.id),
                         ),
                       ),
                   ],

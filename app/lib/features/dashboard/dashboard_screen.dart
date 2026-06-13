@@ -7,6 +7,7 @@ import 'package:moneynote/domain/calculations.dart';
 import 'package:moneynote/domain/txn_grouping.dart';
 import 'package:moneynote/features/budgets/budgets_screen.dart';
 import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
+import 'package:moneynote/features/transactions/transaction_detail_screen.dart';
 import 'package:moneynote/features/transactions/transaction_tile.dart';
 import 'package:moneynote/state/providers.dart';
 
@@ -161,7 +162,11 @@ class DashboardScreen extends ConsumerWidget {
                             Theme.of(context).colorScheme.onSurfaceVariant)),
               ),
               for (final t in g.txns)
-                TransactionTile(txn: t, category: catById[t.categoryId]),
+                TransactionTile(
+                  txn: t,
+                  category: catById[t.categoryId],
+                  onTap: () => openTransactionDetail(context, t.id),
+                ),
             ],
           ],
         );

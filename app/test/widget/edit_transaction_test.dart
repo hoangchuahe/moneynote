@@ -47,8 +47,11 @@ void main() {
     ));
     await tester.pump(const Duration(milliseconds: 200));
 
-    // Tap the row -> edit screen, pre-filled with the existing values.
+    // Tap the row -> read-only detail, then "Sửa" -> edit screen pre-filled.
     await tester.tap(find.text('Ăn uống'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chi tiết'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('editTxn')));
     await tester.pumpAndSettle();
     expect(find.text('Sửa giao dịch'), findsOneWidget);
     expect(find.text('50.000'), findsOneWidget); // amount pre-filled (grouped)
