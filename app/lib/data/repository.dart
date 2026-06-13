@@ -36,6 +36,7 @@ class AppRepository {
     required String name,
     required WalletType type,
     int initialBalance = 0,
+    int color = 0xFF0B7A4F,
   }) async {
     final now = DateTime.now();
     final id = _uuid.v4();
@@ -44,6 +45,7 @@ class AppRepository {
           name: name,
           type: type,
           initialBalance: Value(initialBalance),
+          color: Value(color),
           createdAt: now,
           updatedAt: now,
         ));
@@ -150,6 +152,22 @@ class AppRepository {
     final now = DateTime.now();
     await (db.update(db.transactions)..where((t) => t.id.equals(id))).write(
       TransactionsCompanion(deletedAt: const Value(null), updatedAt: Value(now)),
+    );
+  }
+
+  Future<void> updateWallet({
+    required String id,
+    required String name,
+    required WalletType type,
+    required int color,
+  }) async {
+    await (db.update(db.wallets)..where((t) => t.id.equals(id))).write(
+      WalletsCompanion(
+        name: Value(name),
+        type: Value(type),
+        color: Value(color),
+        updatedAt: Value(DateTime.now()),
+      ),
     );
   }
 
