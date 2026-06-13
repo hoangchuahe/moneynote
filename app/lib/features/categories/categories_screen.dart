@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/category_visuals.dart';
 import 'package:moneynote/data/database.dart';
+import 'package:moneynote/features/categories/category_detail_screen.dart';
 import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
 import 'package:moneynote/state/providers.dart';
 
@@ -32,6 +33,7 @@ class CategoriesScreen extends ConsumerWidget {
   Widget _tile(BuildContext context, WidgetRef ref, Category c) => ListTile(
         leading: CategoryIconBox(iconName: c.icon, color: c.color),
         title: Text(c.name),
+        onTap: () => openCategoryDetail(context, c.id),
         onLongPress: () => _confirmDelete(context, ref, c),
       );
 
@@ -55,51 +57,4 @@ class CategoriesScreen extends ConsumerWidget {
       await ref.read(repositoryProvider).softDeleteCategory(c.id);
     }
   }
-}
-
-Future<void> showAddCategoryDialog(BuildContext context, WidgetRef ref) async {
-  final nameCtrl = TextEditingController();
-  var type = CategoryType.expense;
-  await showDialog<void>(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setState) => AlertDialog(
-        title: const Text('Thêm danh mục'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Tên danh mục')),
-            DropdownButton<CategoryType>(
-              value: type,
-              isExpanded: true,
-              items: const [
-                DropdownMenuItem(
-                    value: CategoryType.expense, child: Text('Chi')),
-                DropdownMenuItem(
-                    value: CategoryType.income, child: Text('Thu')),
-              ],
-              onChanged: (v) =>
-                  setState(() => type = v ?? CategoryType.expense),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Huỷ')),
-          FilledButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              if (name.isEmpty) return;
-              ref.read(repositoryProvider).addCategory(name: name, type: type);
-              Navigator.pop(ctx);
-            },
-            child: const Text('Lưu'),
-          ),
-        ],
-      ),
-    ),
-  );
-  nameCtrl.dispose();
 }

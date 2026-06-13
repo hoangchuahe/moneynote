@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/widgets/large_title_header.dart';
 import 'package:moneynote/features/categories/categories_screen.dart';
+import 'package:moneynote/features/categories/category_edit_screen.dart';
 import 'package:moneynote/features/dashboard/dashboard_screen.dart';
 import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
 import 'package:moneynote/features/reports/reports_screen.dart';
@@ -51,7 +52,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Thêm danh mục',
-            onPressed: () => showAddCategoryDialog(context, ref),
+            onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CategoryEditScreen())),
           ),
         IconButton(
           key: const Key('openSettings'),

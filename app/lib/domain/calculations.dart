@@ -54,3 +54,15 @@ MonthSummary summarize(List<Transaction> txns, DateTime month) {
   }
   return MonthSummary(income: income, expense: expense);
 }
+
+/// All-time total of [categoryId]'s transactions in [txns]. Caller passes only
+/// non-deleted txns (e.g. from transactionsProvider). A category is single-typed,
+/// so a plain amount sum is its Chi-or-Thu total; sign/colour come from the
+/// category's type at the call site, not from here.
+int categoryTotal(String categoryId, List<Transaction> txns) {
+  var sum = 0;
+  for (final t in txns) {
+    if (t.categoryId == categoryId) sum += t.amount;
+  }
+  return sum;
+}
