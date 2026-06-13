@@ -41,6 +41,7 @@ void main() {
     expect(rules.single.amount, 50000);
     expect(rules.single.type, TransactionType.expense);
     expect(rules.single.cycle, RecurringCycle.monthly);
+    expect(rules.single.walletId, isNotEmpty); // defaulted to the first wallet
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);

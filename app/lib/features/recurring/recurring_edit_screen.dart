@@ -13,6 +13,15 @@ String cycleLabel(RecurringCycle c) => switch (c) {
       RecurringCycle.yearly => 'Hàng năm',
     };
 
+/// Short labels for the cycle SegmentedButton — full labels overflow 4 segments
+/// on a phone-width screen (~411dp). The list uses the full [cycleLabel].
+String cycleShortLabel(RecurringCycle c) => switch (c) {
+      RecurringCycle.daily => 'Ngày',
+      RecurringCycle.weekly => 'Tuần',
+      RecurringCycle.monthly => 'Tháng',
+      RecurringCycle.yearly => 'Năm',
+    };
+
 class RecurringEditScreen extends ConsumerStatefulWidget {
   const RecurringEditScreen({super.key, this.existing});
 
@@ -150,7 +159,7 @@ class _RecurringEditScreenState extends ConsumerState<RecurringEditScreen> {
             key: const Key('cycleSegment'),
             segments: [
               for (final c in RecurringCycle.values)
-                ButtonSegment(value: c, label: Text(cycleLabel(c))),
+                ButtonSegment(value: c, label: Text(cycleShortLabel(c))),
             ],
             selected: {_cycle},
             onSelectionChanged: (s) => setState(() => _cycle = s.first),
