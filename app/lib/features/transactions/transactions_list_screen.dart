@@ -5,6 +5,7 @@ import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/transaction_filter.dart';
 import 'package:moneynote/domain/txn_grouping.dart';
+import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
 import 'package:moneynote/features/transactions/add_transaction_screen.dart';
 import 'package:moneynote/features/transactions/transaction_tile.dart';
 import 'package:moneynote/state/providers.dart';
@@ -68,6 +69,7 @@ class TransactionsListScreen extends ConsumerWidget {
               final groups = groupByDay(txns, DateTime.now());
               final deleteColor = moneyColorsOf(context).expense;
               return ListView(
+                padding: EdgeInsets.only(bottom: pillClearance(context)),
                 children: [
                   for (final g in groups) ...[
                     Padding(
@@ -96,6 +98,10 @@ class TransactionsListScreen extends ConsumerWidget {
                           ScaffoldMessenger.of(context)
                             ..hideCurrentSnackBar()
                             ..showSnackBar(SnackBar(
+                              margin: EdgeInsets.only(
+                                  bottom: pillClearance(context),
+                                  left: 12,
+                                  right: 12),
                               content: const Text('Đã xoá giao dịch'),
                               action: SnackBarAction(
                                 label: 'Hoàn tác',

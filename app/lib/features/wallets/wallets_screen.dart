@@ -5,6 +5,7 @@ import 'package:moneynote/core/money.dart';
 import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/domain/calculations.dart';
+import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
 import 'package:moneynote/state/providers.dart';
 
 String walletTypeLabel(WalletType t) => switch (t) {
@@ -33,6 +34,7 @@ class WalletsScreen extends ConsumerWidget {
           hint: 'Bấm Thêm ví để tạo ví đầu tiên');
     }
     return ListView(
+      padding: EdgeInsets.only(bottom: pillClearance(context)),
       children: [
         for (final w in wallets)
           ListTile(

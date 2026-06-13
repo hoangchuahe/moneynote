@@ -6,6 +6,7 @@ import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/domain/calculations.dart';
 import 'package:moneynote/domain/txn_grouping.dart';
 import 'package:moneynote/features/budgets/budgets_screen.dart';
+import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
 import 'package:moneynote/features/transactions/transaction_tile.dart';
 import 'package:moneynote/state/providers.dart';
 
@@ -28,6 +29,7 @@ class DashboardScreen extends ConsumerWidget {
         final recentGroups = groupByDay(txns.take(15).toList(), DateTime.now());
         final money = moneyColorsOf(context);
         return ListView(
+          padding: EdgeInsets.only(bottom: pillClearance(context)),
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:moneynote/core/prefs.dart';
 import 'package:moneynote/core/theme.dart';
 import 'package:moneynote/data/database.dart';
+import 'package:moneynote/data/repository.dart';
 import 'package:moneynote/data/seed.dart';
 import 'package:moneynote/features/home/home_shell.dart';
 import 'package:moneynote/features/home/widgets/floating_pill_nav.dart';
@@ -141,6 +142,37 @@ void main() {
     // this DB-only test, so it shows a spinner — pumpAndSettle would never
     // settle. Asserting presence is enough to prove navigation.
     expect(find.byType(SettingsScreen), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  });
+
+  testWidgets('Transactions undo SnackBar clears the floating pill',
+      (tester) async {
+    final db = await setupDb();
+    addTearDown(db.close);
+    // seedIfEmpty seeds wallets/categories but no transactions; add one so the
+    // Transactions list renders a Dismissible to swipe.
+    final repo = AppRepository(db);
+    final wallet = (await db.select(db.wallets).get()).first;
+    await repo.addTransaction(
+        amount: 40000,
+        type: TransactionType.expense,
+        walletId: wallet.id,
+        note: 'cà phê');
+    bigView(tester);
+    await pumpShell(tester, db);
+
+    await tester.tap(find.byKey(const Key('navTab_1'))); // Giao dịch
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    await tester.drag(find.byType(Dismissible).first, const Offset(-600, 0));
+    await tester.pump(); // start dismiss
+    await tester.pump(const Duration(milliseconds: 400)); // settle + show toast
+
+    final snack = tester.widget<SnackBar>(find.byType(SnackBar));
+    expect((snack.margin as EdgeInsets).bottom, greaterThanOrEqualTo(96));
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
