@@ -100,5 +100,17 @@ void main() {
       expect(nextOccurrenceAfter(DateTime(2026, 7, 1), RecurringCycle.monthly, DateTime(2026, 6, 13)),
           DateTime(2026, 7, 1));
     });
+    test('start == today returns the next boundary, never today', () {
+      expect(nextOccurrenceAfter(DateTime(2026, 6, 13), RecurringCycle.daily, DateTime(2026, 6, 13)),
+          DateTime(2026, 6, 14));
+      expect(nextOccurrenceAfter(DateTime(2026, 6, 13), RecurringCycle.weekly, DateTime(2026, 6, 13)),
+          DateTime(2026, 6, 20));
+      expect(nextOccurrenceAfter(DateTime(2026, 6, 13), RecurringCycle.monthly, DateTime(2026, 6, 13)),
+          DateTime(2026, 7, 13));
+      expect(nextOccurrenceAfter(DateTime(2026, 1, 31), RecurringCycle.monthly, DateTime(2026, 1, 31)),
+          DateTime(2026, 2, 28));
+      expect(nextOccurrenceAfter(DateTime(2026, 6, 13), RecurringCycle.yearly, DateTime(2026, 6, 13)),
+          DateTime(2027, 6, 13));
+    });
   });
 }
