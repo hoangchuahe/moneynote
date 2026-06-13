@@ -226,6 +226,9 @@ void main() {
       expect(const BudgetProgress(0, 0).level, BudgetLevel.ok);
       expect(const BudgetProgress(5000, 0).ratio, 0.0);
       expect(const BudgetProgress(5000, 0).percent, 0);
+      // spent > limit short-circuits before the ratio guard, so a 0-limit budget
+      // with any spending reads as over (mirrors BudgetTile's spent > limit).
+      expect(const BudgetProgress(5000, 0).level, BudgetLevel.over);
     });
     test('spent == limit is warn, not over', () {
       expect(const BudgetProgress(1000000, 1000000).level, BudgetLevel.warn);

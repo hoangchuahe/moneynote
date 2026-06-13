@@ -41,12 +41,10 @@ int spentInMonth(List<Transaction> txns, DateTime month, {String? categoryId}) {
 /// Income/expense totals for the calendar month containing [month].
 /// Transfers are intentionally excluded — they are not income or expense.
 MonthSummary summarize(List<Transaction> txns, DateTime month) {
-  final start = DateTime(month.year, month.month, 1);
-  final end = DateTime(month.year, month.month + 1, 1);
   var income = 0;
   var expense = 0;
   for (final t in txns) {
-    if (t.occurredAt.isBefore(start) || !t.occurredAt.isBefore(end)) continue;
+    if (!inMonth(t.occurredAt, month)) continue;
     if (t.type == TransactionType.income) income += t.amount;
     if (t.type == TransactionType.expense) expense += t.amount;
   }
