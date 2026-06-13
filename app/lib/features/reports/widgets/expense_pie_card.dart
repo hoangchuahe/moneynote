@@ -94,6 +94,8 @@ class ExpensePieCard extends StatelessWidget {
                               Text(formatVnd(s.total),
                                   style: TextStyle(fontSize: 11, color: muted)),
                               const SizedBox(width: 8),
+                              // TODO(#7): per-slice rounding can sum to 99/101%; switch to
+                              // largest-remainder if it bothers users.
                               Text('${(s.total / total * 100).round()}%',
                                   style: const TextStyle(
                                       fontSize: 12,
