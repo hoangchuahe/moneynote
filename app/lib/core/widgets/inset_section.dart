@@ -38,6 +38,7 @@ class InsetSection extends StatelessWidget {
           ),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
+          clipBehavior: Clip.antiAlias, // keep row InkWell ripples inside the radius
           decoration: BoxDecoration(
             color: cs.surface,
             borderRadius: BorderRadius.circular(16),
@@ -102,8 +103,12 @@ class InsetRow extends StatelessWidget {
             ),
             if (value != null) ...[
               const SizedBox(width: 12),
-              Text(value!,
-                  style: TextStyle(fontSize: 15, color: cs.onSurfaceVariant)),
+              Flexible(
+                child: Text(value!,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(fontSize: 15, color: cs.onSurfaceVariant)),
+              ),
             ],
           ],
         ),

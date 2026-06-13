@@ -82,6 +82,7 @@ void main() {
     expect(find.text('Ngày'), findsOneWidget);
     expect(find.text('Loại'), findsOneWidget);
     expect(find.text('Khoản chi'), findsOneWidget);
+    expect(find.text('Ghi chú'), findsOneWidget); // note group present
     expect(find.text('phở'), findsOneWidget);
     expect(find.textContaining('+50.000'), findsNothing);
     await teardown(tester);
