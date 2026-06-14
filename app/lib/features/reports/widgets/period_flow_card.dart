@@ -4,9 +4,11 @@ import 'package:moneynote/core/theme.dart';
 import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/domain/reports.dart';
 
-class MonthlyFlowCard extends StatelessWidget {
-  final List<MonthlyFlow> flows;
-  const MonthlyFlowCard({super.key, required this.flows});
+/// Trend thu/chi 6 kỳ (gallery ScreenTrend): cột kép thu+chi, kỳ hiện tại (cột
+/// cuối) làm đậm nhãn trục. Nhận List<PeriodFlow> nên dùng chung tháng/quý/năm.
+class PeriodFlowCard extends StatelessWidget {
+  final List<PeriodFlow> flows;
+  const PeriodFlowCard({super.key, required this.flows});
 
   @override
   Widget build(BuildContext context) {
@@ -18,13 +20,15 @@ class MonthlyFlowCard extends StatelessWidget {
           child: EmptyState(
             icon: Icons.bar_chart,
             title: 'Chưa có thu chi nào',
-            hint: 'Thêm giao dịch để xem xu hướng 6 tháng',
+            hint: 'Thêm giao dịch để xem xu hướng',
           ),
         ),
       );
     }
     final money = moneyColorsOf(context);
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    final cs = Theme.of(context).colorScheme;
+    final muted = cs.onSurfaceVariant;
+    final noun = flows.last.period.noun;
     final maxV = flows
         .map((f) => f.income > f.expense ? f.income : f.expense)
         .fold<int>(0, (m, v) => v > m ? v : m);
@@ -37,10 +41,10 @@ class MonthlyFlowCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Expanded(
-                  child: Text('Thu / chi · 6 tháng',
-                      style:
-                          TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                Expanded(
+                  child: Text('Thu / chi · 6 $noun',
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w500)),
                 ),
                 _dot(money.income, 'Thu', muted),
                 const SizedBox(width: 12),
@@ -70,10 +74,15 @@ class MonthlyFlowCard extends StatelessWidget {
                         if (i < 0 || i >= flows.length) {
                           return const SizedBox.shrink();
                         }
+                        final cur = i == flows.length - 1;
                         return Padding(
                           padding: const EdgeInsets.only(top: 4),
-                          child: Text('T${flows[i].month.month}',
-                              style: TextStyle(fontSize: 11, color: muted)),
+                          child: Text(flows[i].period.shortLabel,
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: cur ? cs.primary : muted,
+                                  fontWeight:
+                                      cur ? FontWeight.w600 : FontWeight.w400)),
                         );
                       },
                     ),
@@ -86,15 +95,15 @@ class MonthlyFlowCard extends StatelessWidget {
                         toY: flows[i].income.toDouble(),
                         color: money.income,
                         width: 10,
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(4)),
+                        borderRadius:
+                            const BorderRadius.vertical(top: Radius.circular(4)),
                       ),
                       BarChartRodData(
                         toY: flows[i].expense.toDouble(),
                         color: money.expense,
                         width: 10,
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(4)),
+                        borderRadius:
+                            const BorderRadius.vertical(top: Radius.circular(4)),
                       ),
                     ]),
                 ],

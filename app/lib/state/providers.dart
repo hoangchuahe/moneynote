@@ -5,6 +5,7 @@ import 'package:moneynote/data/ai_client.dart';
 import 'package:moneynote/data/csv_export_service.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/data/repository.dart';
+import 'package:moneynote/domain/report_period.dart';
 import 'package:moneynote/domain/transaction_filter.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -44,6 +45,11 @@ final selectedMonthProvider = StateProvider<DateTime>((ref) {
   final now = DateTime.now();
   return DateTime(now.year, now.month, 1);
 });
+
+/// Granularity (Tháng/Quý/Năm) for the Báo cáo screen. The period anchor stays
+/// [selectedMonthProvider]; the active window = ReportPeriod(granularity, anchor).
+final reportGranularityProvider =
+    StateProvider<ReportGranularity>((ref) => ReportGranularity.month);
 
 final prefsProvider = FutureProvider<AppPrefs>((ref) => AppPrefs.load());
 
