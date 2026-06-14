@@ -20,6 +20,9 @@ class SettingsScreen extends ConsumerWidget {
         Icon(Icons.chevron_right, size: 20, color: cs.onSurfaceVariant);
     Widget icon(IconData i) => Icon(i, size: 22, color: cs.onSurfaceVariant);
 
+    final supported =
+        ref.watch(appLockSupportedProvider).valueOrNull ?? false;
+
     return Scaffold(
       body: Column(
         children: [
@@ -101,6 +104,26 @@ class SettingsScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  InsetSection(
+                    header: 'Bảo mật',
+                    footer: supported
+                        ? null
+                        : 'Thiết bị chưa cài khoá màn hình hoặc sinh trắc học.',
+                    children: [
+                      InsetRow(
+                        leading: icon(Icons.lock_outline),
+                        title: 'Khoá ứng dụng',
+                        trailing: Switch(
+                          value: prefs.appLockEnabled,
+                          onChanged: supported
+                              ? (v) =>
+                                  _toggleAppLock(context, ref, prefs, v)
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   const InsetSection(
                     header: 'Giới thiệu',
                     footer:
@@ -158,6 +181,18 @@ Future<void> _pickStyle(
     await prefs.setThemeStyle(picked);
     if (context.mounted) ref.invalidate(prefsProvider);
   }
+}
+
+Future<void> _toggleAppLock(
+    BuildContext context, WidgetRef ref, AppPrefs prefs, bool enable) async {
+  if (enable) {
+    final ok = await ref.read(appLockServiceProvider).authenticate();
+    if (!ok) return; // confirm failed → leave it off
+    await prefs.setAppLockEnabled(true);
+  } else {
+    await prefs.setAppLockEnabled(false);
+  }
+  if (context.mounted) ref.invalidate(prefsProvider);
 }
 
 void _openServerUrlSheet(BuildContext context, WidgetRef ref, AppPrefs prefs) {

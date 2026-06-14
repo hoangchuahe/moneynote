@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moneynote/core/prefs.dart';
+import 'package:moneynote/data/app_lock_service.dart';
 import 'package:moneynote/features/settings/settings_screen.dart';
+import 'package:moneynote/state/providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -14,8 +16,9 @@ void main() {
   }
 
   Future<void> pumpSettings(WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(
-      child: MaterialApp(home: SettingsScreen()),
+    await tester.pumpWidget(ProviderScope(
+      overrides: [appLockServiceProvider.overrideWithValue(_SupportedLock())],
+      child: const MaterialApp(home: SettingsScreen()),
     ));
     await tester.pumpAndSettle();
   }
@@ -88,4 +91,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Chọn khoảng thời gian'), findsOneWidget);
   });
+}
+
+class _SupportedLock extends AppLockService {
+  @override
+  Future<bool> isSupported() async => true;
+  @override
+  Future<bool> authenticate() async => true;
 }
