@@ -1,5 +1,4 @@
 import 'package:moneynote/data/database.dart';
-import 'package:moneynote/domain/calculations.dart';
 import 'package:moneynote/domain/report_period.dart';
 
 /// Tổng expense của một danh mục trong một tháng. categoryId null = chưa phân loại.
@@ -23,28 +22,6 @@ List<CategorySpend> expenseByCategory(
   final list = byCat.entries.map((e) => CategorySpend(e.key, e.value)).toList();
   list.sort((a, b) => b.total.compareTo(a.total));
   return list;
-}
-
-/// Thu/chi của một tháng (mốc đầu tháng).
-class MonthlyFlow {
-  final DateTime month;
-  final int income;
-  final int expense;
-  const MonthlyFlow(this.month, this.income, this.expense);
-}
-
-/// Thu/chi từng tháng cho [months] tháng gần nhất tính tới [endMonth] (gồm endMonth),
-/// cũ → mới. Loại transfer (qua summarize). Tháng rỗng → income = expense = 0.
-List<MonthlyFlow> monthlyFlow(List<Transaction> txns, DateTime endMonth,
-    {int months = 6}) {
-  final result = <MonthlyFlow>[];
-  for (var i = months - 1; i >= 0; i--) {
-    final m =
-        DateTime(endMonth.year, endMonth.month - i, 1); // tự chuẩn hoá biên năm
-    final s = summarize(txns, m);
-    result.add(MonthlyFlow(m, s.income, s.expense));
-  }
-  return result;
 }
 
 /// Thu/chi của một kỳ báo cáo (transfer không tính, như summarize).
