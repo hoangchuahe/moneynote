@@ -6,6 +6,7 @@ import 'package:moneynote/data/database.dart';
 import 'package:moneynote/data/repository.dart';
 import 'package:moneynote/data/seed.dart';
 import 'package:moneynote/features/dashboard/dashboard_screen.dart';
+import 'package:moneynote/features/transactions/transaction_tile.dart';
 import 'package:moneynote/state/providers.dart';
 
 import '../drift_setup.dart';
@@ -104,7 +105,16 @@ void main() {
 
     expect(find.text('Còn lại tháng này'), findsOneWidget);
     expect(find.text('Hôm nay'), findsOneWidget);
-    expect(find.textContaining('-'), findsNothing); // không dấu trừ
+    // Scoped: chi/transfer trên TransactionTile không được có dấu trừ.
+    // (không dùng findsNothing toàn màn hình để tránh dương tính giả từ
+    // chuỗi khác như ngày "12-6", v.v.)
+    expect(
+      find.descendant(
+        of: find.byType(TransactionTile),
+        matching: find.textContaining('-'),
+      ),
+      findsNothing,
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
