@@ -11,3 +11,6 @@ app/sqlite3.dll
 # Go
 server/server.exe
 server/*.exe
+
+# Superpowers specs/plans — keep local-only
+docs/superpowers/
