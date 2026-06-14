@@ -128,7 +128,7 @@ Future<void> _pickTone(
   );
   if (picked != null) {
     await prefs.setTone(picked);
-    ref.invalidate(prefsProvider);
+    if (context.mounted) ref.invalidate(prefsProvider);
   }
 }
 
@@ -142,7 +142,7 @@ Future<void> _pickThemeMode(
   );
   if (picked != null) {
     await prefs.setThemeMode(picked);
-    ref.invalidate(prefsProvider);
+    if (context.mounted) ref.invalidate(prefsProvider);
   }
 }
 
@@ -156,7 +156,7 @@ Future<void> _pickStyle(
   );
   if (picked != null) {
     await prefs.setThemeStyle(picked);
-    ref.invalidate(prefsProvider);
+    if (context.mounted) ref.invalidate(prefsProvider);
   }
 }
 
@@ -168,12 +168,11 @@ void _openServerUrlSheet(BuildContext context, WidgetRef ref, AppPrefs prefs) {
       initialUrl: prefs.baseUrl,
       onSave: (url) async {
         await prefs.setBaseUrl(url);
+        if (!context.mounted) return;
         ref.invalidate(prefsProvider);
         if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Đã lưu địa chỉ server')));
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã lưu địa chỉ server')));
       },
     ),
   );
