@@ -6,6 +6,7 @@ import 'package:moneynote/core/theme.dart';
 import 'package:moneynote/data/repository.dart';
 import 'package:moneynote/data/seed.dart';
 import 'package:moneynote/features/home/home_shell.dart';
+import 'package:moneynote/features/lock/lock_gate.dart';
 import 'package:moneynote/state/providers.dart';
 
 final _seedProvider = FutureProvider<void>((ref) async {
@@ -60,7 +61,7 @@ class _Root extends ConsumerWidget {
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('Lỗi khởi tạo: $e'))),
-      data: (_) => const HomeShell(),
+      data: (_) => const LockGate(child: HomeShell()),
     );
   }
 }
