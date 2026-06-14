@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moneynote/core/prefs.dart';
 import 'package:moneynote/data/ai_client.dart';
+import 'package:moneynote/data/app_lock_service.dart';
 import 'package:moneynote/data/csv_export_service.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/data/repository.dart';
@@ -19,6 +20,13 @@ final repositoryProvider = Provider<AppRepository>(
 );
 
 final csvExporterProvider = Provider<CsvExporter>((ref) => DiskCsvExporter());
+
+final appLockServiceProvider =
+    Provider<AppLockService>((ref) => AppLockService());
+
+/// One-shot: does the device have a usable credential?
+final appLockSupportedProvider =
+    FutureProvider<bool>((ref) => ref.watch(appLockServiceProvider).isSupported());
 
 final walletsProvider = StreamProvider<List<Wallet>>(
   (ref) => ref.watch(repositoryProvider).watchWallets(),
