@@ -54,4 +54,11 @@ void main() {
     await prefs.setThemeStyle(AppThemeStyle.warm);
     expect((await AppPrefs.load()).themeStyle, AppThemeStyle.warm);
   });
+
+  test('app lock defaults off and persists', () async {
+    final prefs = await AppPrefs.load();
+    expect(prefs.appLockEnabled, false);
+    await prefs.setAppLockEnabled(true);
+    expect((await AppPrefs.load()).appLockEnabled, true);
+  });
 }
