@@ -18,6 +18,7 @@ class AppPrefs {
   static const _kBaseUrl = 'ai_base_url';
   static const _kThemeMode = 'theme_mode';
   static const _kThemeStyle = 'theme_style';
+  static const _kAppLock = 'app_lock_enabled';
 
   static Future<AppPrefs> load() async {
     final p = await SharedPreferences.getInstance();
@@ -55,4 +56,7 @@ class AppPrefs {
       );
   Future<void> setThemeStyle(AppThemeStyle s) =>
       _p.setString(_kThemeStyle, s.name);
+
+  bool get appLockEnabled => _p.getBool(_kAppLock) ?? false;
+  Future<void> setAppLockEnabled(bool v) => _p.setBool(_kAppLock, v);
 }
