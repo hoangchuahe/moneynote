@@ -27,6 +27,10 @@ func (rl *RateLimiter) Wrap(next http.Handler) http.Handler {
 			writeErr(w, http.StatusUnauthorized, "missing_device_token")
 			return
 		}
+		if l := len(token); l < 16 || l > 64 {
+			writeErr(w, http.StatusUnauthorized, "missing_device_token")
+			return
+		}
 		win := rl.now().Truncate(time.Hour)
 		rl.mu.Lock()
 		if !win.Equal(rl.win) {

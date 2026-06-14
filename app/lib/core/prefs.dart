@@ -11,7 +11,8 @@ const defaultBaseUrl = 'http://10.0.2.2:8080'; // Android emulator -> host
 
 class AppPrefs {
   final SharedPreferences _p;
-  AppPrefs._(this._p);
+  final String deviceToken;
+  AppPrefs._(this._p, this.deviceToken);
 
   static const _kTone = 'tone';
   static const _kToken = 'device_token';
@@ -23,10 +24,12 @@ class AppPrefs {
 
   static Future<AppPrefs> load() async {
     final p = await SharedPreferences.getInstance();
-    if (!p.containsKey(_kToken)) {
-      await p.setString(_kToken, const Uuid().v4());
+    var token = p.getString(_kToken);
+    if (token == null || token.isEmpty) {
+      token = const Uuid().v4();
+      await p.setString(_kToken, token);
     }
-    return AppPrefs._(p);
+    return AppPrefs._(p, token);
   }
 
   Tone get tone => Tone.values.firstWhere(
@@ -34,8 +37,6 @@ class AppPrefs {
         orElse: () => Tone.serious,
       );
   Future<void> setTone(Tone t) => _p.setString(_kTone, t.name);
-
-  String get deviceToken => _p.getString(_kToken)!;
 
   String get baseUrl => _p.getString(_kBaseUrl) ?? defaultBaseUrl;
 
