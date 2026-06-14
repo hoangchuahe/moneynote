@@ -7,7 +7,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Moneynote</string>
+	<string>MoneyNote</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>MoneyNote dùng Face ID để mở khoá ứng dụng.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
