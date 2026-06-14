@@ -109,4 +109,52 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
   });
+
+  testWidgets('Gần đây only shows transactions in the selected month',
+      (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    await seedIfEmpty(db);
+    addTearDown(db.close);
+    final repo = AppRepository(db);
+
+    await tester.runAsync(() async {
+      final w = (await repo.watchWallets().first).single;
+      // One txn in the selected month (March 2026)
+      await repo.addTransaction(
+        amount: 80000,
+        type: TransactionType.income,
+        walletId: w.id,
+        note: 'thu thang ba',
+        occurredAt: DateTime(2026, 3, 15),
+      );
+      // One txn in a different month (April 2026) — must NOT appear
+      await repo.addTransaction(
+        amount: 30000,
+        type: TransactionType.expense,
+        walletId: w.id,
+        note: 'chi thang tu',
+        occurredAt: DateTime(2026, 4, 10),
+      );
+    });
+
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        selectedMonthProvider.overrideWith((ref) => DateTime(2026, 3, 1)),
+      ],
+      child: const MaterialApp(home: Scaffold(body: DashboardScreen())),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('thu thang ba'), findsOneWidget);
+    expect(find.text('chi thang tu'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  });
 }

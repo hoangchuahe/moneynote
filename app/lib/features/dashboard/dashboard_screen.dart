@@ -28,7 +28,9 @@ class DashboardScreen extends ConsumerWidget {
       data: (txns) {
         final s = summarize(txns, month);
         final catById = {for (final c in categories) c.id: c};
-        final recentGroups = groupByDay(txns.take(15).toList(), DateTime.now());
+        final recentGroups = groupByDay(
+            txns.where((t) => inMonth(t.occurredAt, month)).take(15).toList(),
+            DateTime.now());
         final money = moneyColorsOf(context);
         return ListView(
           padding: EdgeInsets.only(bottom: pillClearance(context)),
@@ -149,7 +151,7 @@ class DashboardScreen extends ConsumerWidget {
               child: Text('Gần đây',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             ),
-            if (txns.isEmpty)
+            if (recentGroups.isEmpty)
               const EmptyState(
                   icon: Icons.receipt_long,
                   title: 'Chưa có giao dịch nào',
