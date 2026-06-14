@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moneynote/core/category_visuals.dart';
 import 'package:moneynote/core/money.dart';
 import 'package:moneynote/core/widgets/empty_state.dart';
 import 'package:moneynote/data/database.dart';
@@ -41,15 +42,11 @@ class WalletIconBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Color(color);
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: c.withAlpha(36),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(walletTypeIcon(type), size: size * 0.5, color: c),
+    return IconBox(
+      icon: walletTypeIcon(type),
+      background: c.withAlpha(36),
+      foreground: c,
+      size: size,
     );
   }
 }

@@ -13,16 +13,10 @@ import 'package:moneynote/state/providers.dart';
 /// Leading cho BudgetTile: ô icon danh mục, hoặc ví tổng khi ngân sách Tổng.
 Widget budgetLeading(BuildContext context, Category? category) =>
     category == null
-        ? Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.account_balance_wallet,
-                size: 18,
-                color: Theme.of(context).colorScheme.onPrimaryContainer),
+        ? IconBox(
+            icon: Icons.account_balance_wallet,
+            background: Theme.of(context).colorScheme.primaryContainer,
+            foreground: Theme.of(context).colorScheme.onPrimaryContainer,
           )
         : CategoryIconBox(iconName: category.icon, color: category.color);
 

@@ -36,14 +36,10 @@ class TransactionTile extends StatelessWidget {
     return ListTile(
       onTap: onTap,
       leading: isTransfer
-          ? Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: money.transfer.withAlpha(36),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.swap_horiz, size: 18, color: money.transfer),
+          ? IconBox(
+              icon: Icons.swap_horiz,
+              background: money.transfer.withAlpha(36),
+              foreground: money.transfer,
             )
           : CategoryIconBox(
               iconName: category?.icon ?? 'category',
