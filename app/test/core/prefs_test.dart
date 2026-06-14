@@ -22,6 +22,12 @@ void main() {
     expect(again.deviceToken, t1);
   });
 
+  test('empty stored token regenerates a fresh non-empty token', () async {
+    SharedPreferences.setMockInitialValues({'device_token': ''});
+    final prefs = await AppPrefs.load();
+    expect(prefs.deviceToken, isNotEmpty);
+  });
+
   test('base url defaults to emulator host', () async {
     final prefs = await AppPrefs.load();
     expect(prefs.baseUrl, 'http://10.0.2.2:8080');

@@ -56,11 +56,19 @@ void main() {
     await tester.tap(find.byKey(const Key('parseButton')));
     await tester.pump(); // start _runSmartParse Future
 
-    // Allow the async chain (await prefs future + fake parse + Drift
-    // lookupMerchant) to complete in real wall-clock time.
-    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 500)));
+    // Poll deterministically: pump until the amount field is pre-filled or
+    // timeout. avoids a fixed wall-clock delay that is slow + flaky on CI.
+    await tester.runAsync(() async {
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (tester.any(find.text('50.000')) == false) {
+        if (DateTime.now().isAfter(deadline)) {
+          throw StateError('Timed out waiting for smart-parse result');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await tester.pump();
+      }
+    });
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('50.000'), findsOneWidget); // amount field pre-filled, grouped
     expect(find.byKey(const Key('aiCommentCard')), findsOneWidget);
@@ -100,10 +108,22 @@ void main() {
 
     await tester.enterText(find.byKey(const Key('smartInput')), 'mua gì đó');
     await tester.tap(find.byKey(const Key('parseButton')));
+    await tester.pump(); // start _runSmartParse Future
+
+    // Poll deterministically: pump until the parse button re-shows "Phân tích"
+    // (meaning _parsing returned to false). Amount 0 leaves the field empty so
+    // we can't poll on a positive text match in the form.
+    await tester.runAsync(() async {
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (!tester.any(find.text('Phân tích'))) {
+        if (DateTime.now().isAfter(deadline)) {
+          throw StateError('Timed out waiting for smart-parse to finish');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await tester.pump();
+      }
+    });
     await tester.pump();
-    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 500)));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
 
     final amountField = tester.widget<TextField>(find.byKey(const Key('amountField')));
     expect(amountField.controller!.text, isEmpty,

@@ -70,6 +70,34 @@ const kCategoryColors = <int>[
 /// Nền ô icon: màu danh mục với alpha 14% (36/255), dùng được cả light/dark.
 Color categoryTint(int argb) => Color(argb).withAlpha(36);
 
+/// Generic icon box: a [size]×[size] rounded square (radius 12) with a plain
+/// [Color] background holding an [Icon] at half-size. Use this for any leading
+/// that isn't a category (e.g. wallet, transfer, overall-budget).
+class IconBox extends StatelessWidget {
+  final IconData icon;
+  final Color background;
+  final Color foreground;
+  final double size;
+  const IconBox({
+    super.key,
+    required this.icon,
+    required this.background,
+    required this.foreground,
+    this.size = 36,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, size: size * 0.5, color: foreground),
+      );
+}
+
 /// Ô icon danh mục 36px bo 12 dùng chung mọi danh sách.
 class CategoryIconBox extends StatelessWidget {
   final String iconName;

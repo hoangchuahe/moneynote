@@ -20,12 +20,48 @@ func TestRequiresDeviceToken(t *testing.T) {
 	}
 }
 
+func TestRejectsTooShortToken(t *testing.T) {
+	mw := NewRateLimiter(5)
+	h := mw.Wrap(http.HandlerFunc(okHandler))
+	req := httptest.NewRequest(http.MethodPost, "/ai/parse", nil)
+	req.Header.Set("X-Device-Token", "x") // 1 char — too short
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401 for too-short token", rec.Code)
+	}
+}
+
+func TestRejectsTooLongToken(t *testing.T) {
+	mw := NewRateLimiter(5)
+	h := mw.Wrap(http.HandlerFunc(okHandler))
+	req := httptest.NewRequest(http.MethodPost, "/ai/parse", nil)
+	req.Header.Set("X-Device-Token", string(make([]byte, 65))) // 65 chars — too long
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401 for too-long token", rec.Code)
+	}
+}
+
+func TestAcceptsValidLengthToken(t *testing.T) {
+	mw := NewRateLimiter(5)
+	h := mw.Wrap(http.HandlerFunc(okHandler))
+	req := httptest.NewRequest(http.MethodPost, "/ai/parse", nil)
+	req.Header.Set("X-Device-Token", "550e8400-e29b-41d4-a716-446655440000") // UUID v4 = 36 chars
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 for valid UUID token", rec.Code)
+	}
+}
+
 func TestRateLimitPerDevice(t *testing.T) {
 	mw := NewRateLimiter(2) // 2 allowed, 3rd blocked
 	h := mw.Wrap(http.HandlerFunc(okHandler))
 	do := func() int {
 		req := httptest.NewRequest(http.MethodPost, "/ai/parse", nil)
-		req.Header.Set("X-Device-Token", "dev-1")
+		req.Header.Set("X-Device-Token", "550e8400-e29b-41d4-a716-446655440001") // valid UUID length
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, req)
 		return rec.Code
@@ -47,7 +83,7 @@ func TestRateLimitResetsAfterWindow(t *testing.T) {
 	h := mw.Wrap(http.HandlerFunc(okHandler))
 	do := func() int {
 		req := httptest.NewRequest(http.MethodPost, "/ai/parse", nil)
-		req.Header.Set("X-Device-Token", "dev-1")
+		req.Header.Set("X-Device-Token", "550e8400-e29b-41d4-a716-446655440001") // valid UUID length
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, req)
 		return rec.Code
