@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moneynote/domain/report_period.dart';
 import 'package:moneynote/domain/reports.dart';
 import 'package:moneynote/features/reports/widgets/expense_pie_card.dart';
 import 'package:moneynote/features/reports/widgets/monthly_flow_card.dart';
@@ -22,7 +23,7 @@ class ReportsScreen extends ConsumerWidget {
         data: (txns) {
           final catById = {for (final c in categories) c.id: c};
           final slices = [
-            for (final s in expenseByCategory(txns, month))
+            for (final s in expenseByCategory(txns, ReportPeriod.month(month)))
               CategorySlice(
                 label: catById[s.categoryId]?.name ?? 'Chưa phân loại',
                 color: Color(catById[s.categoryId]?.color ?? 0xFF9E9E9E),
