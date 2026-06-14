@@ -61,4 +61,11 @@ void main() {
     await prefs.setAppLockEnabled(true);
     expect((await AppPrefs.load()).appLockEnabled, true);
   });
+
+  test('onboarding seen defaults false and persists', () async {
+    final prefs = await AppPrefs.load();
+    expect(prefs.onboardingSeen, false);
+    await prefs.setOnboardingSeen(true);
+    expect((await AppPrefs.load()).onboardingSeen, true);
+  });
 }
