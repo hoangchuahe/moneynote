@@ -53,15 +53,13 @@ void main() {
 
   testWidgets('returns null when dismissed', (tester) async {
     bigView(tester);
-    ThemeMode? result = ThemeMode.light;
-    var called = false;
+    ThemeMode? result = ThemeMode.light; // non-null sentinel; dismiss → null
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
         body: Builder(
           builder: (ctx) => Center(
             child: ElevatedButton(
               onPressed: () async {
-                called = true;
                 result = await showSettingPicker<ThemeMode>(
                   ctx,
                   title: 'Giao diện',
@@ -78,10 +76,9 @@ void main() {
 
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    await tester.tapAt(const Offset(400, 40)); // tap scrim above the sheet
+    await tester.tap(find.byType(ModalBarrier).last); // dismiss via the scrim
     await tester.pumpAndSettle();
 
-    expect(called, true);
     expect(result, isNull);
   });
 }
