@@ -19,6 +19,7 @@ class AppPrefs {
   static const _kThemeMode = 'theme_mode';
   static const _kThemeStyle = 'theme_style';
   static const _kAppLock = 'app_lock_enabled';
+  static const _kOnboarded = 'onboarding_seen';
 
   static Future<AppPrefs> load() async {
     final p = await SharedPreferences.getInstance();
@@ -59,4 +60,7 @@ class AppPrefs {
 
   bool get appLockEnabled => _p.getBool(_kAppLock) ?? false;
   Future<void> setAppLockEnabled(bool v) => _p.setBool(_kAppLock, v);
+
+  bool get onboardingSeen => _p.getBool(_kOnboarded) ?? false;
+  Future<void> setOnboardingSeen(bool v) => _p.setBool(_kOnboarded, v);
 }
