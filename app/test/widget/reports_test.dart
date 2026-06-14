@@ -4,115 +4,70 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moneynote/core/prefs.dart';
 import 'package:moneynote/core/theme.dart';
+import 'package:moneynote/core/widgets/inset_section.dart';
 import 'package:moneynote/data/database.dart';
 import 'package:moneynote/data/repository.dart';
 import 'package:moneynote/data/seed.dart';
-import 'package:moneynote/domain/reports.dart';
-import 'package:moneynote/features/reports/reports_screen.dart';
-import 'package:moneynote/features/reports/widgets/expense_pie_card.dart';
-import 'package:moneynote/features/reports/widgets/monthly_flow_card.dart';
+import 'package:moneynote/features/categories/category_detail_screen.dart';
 import 'package:moneynote/features/home/home_shell.dart';
+import 'package:moneynote/features/reports/reports_screen.dart';
+import 'package:moneynote/features/reports/widgets/category_donut.dart';
+import 'package:moneynote/features/reports/widgets/period_flow_card.dart';
 import 'package:moneynote/state/providers.dart';
 
 import '../drift_setup.dart';
 
-Widget host(Widget child) => MaterialApp(
-      theme: buildTheme(AppThemeStyle.classic, Brightness.light),
-      home: Scaffold(body: child),
-    );
-
-void bigView(WidgetTester tester) {
-  tester.view.physicalSize = const Size(800, 2400);
-  tester.view.devicePixelRatio = 1.0;
-  addTearDown(tester.view.resetPhysicalSize);
-  addTearDown(tester.view.resetDevicePixelRatio);
-}
-
 void main() {
   setUpAll(setupSqliteForTests);
 
-  group('ExpensePieCard', () {
-    testWidgets('renders legend with names, amounts and percents',
-        (tester) async {
-      bigView(tester);
-      await tester.pumpWidget(host(const ExpensePieCard(slices: [
-        CategorySlice(
-            label: 'Ăn uống', color: Color(0xFFEF5350), total: 600000),
-        CategorySlice(label: 'Đi lại', color: Color(0xFF42A5F5), total: 400000),
-      ])));
-      await tester.pump();
+  void bigView(WidgetTester tester) {
+    tester.view.physicalSize = const Size(900, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+  }
 
-      expect(find.text('Chi theo danh mục'), findsOneWidget);
-      expect(find.text('Ăn uống'), findsOneWidget);
-      expect(find.text('600.000 ₫'), findsOneWidget);
-      expect(find.text('60%'), findsOneWidget);
-      expect(find.text('40%'), findsOneWidget);
-      expect(find.text('1.000.000 ₫'), findsOneWidget); // tổng cạnh tiêu đề
-    });
+  Widget app(AppDatabase db, DateTime month) => ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          selectedMonthProvider.overrideWith((ref) => month),
+        ],
+        child: MaterialApp(
+          theme: buildTheme(AppThemeStyle.classic, Brightness.light),
+          home: const ReportsScreen(),
+        ),
+      );
 
-    testWidgets('shows empty state when no slices', (tester) async {
-      bigView(tester);
-      await tester.pumpWidget(host(const ExpensePieCard(slices: [])));
-      await tester.pump();
-      expect(find.text('Chưa có chi tiêu tháng này'), findsOneWidget);
-    });
-  });
-
-  group('MonthlyFlowCard', () {
-    testWidgets('renders Thu/Chi legend and month labels', (tester) async {
-      bigView(tester);
-      final flows = [
-        for (var m = 1; m <= 6; m++)
-          MonthlyFlow(DateTime(2026, m, 1), 1000000 * m, 500000 * m),
-      ];
-      await tester.pumpWidget(host(MonthlyFlowCard(flows: flows)));
-      await tester.pump();
-
-      expect(find.text('Thu'), findsOneWidget);
-      expect(find.text('Chi'), findsOneWidget);
-      expect(find.text('T1'), findsOneWidget);
-      expect(find.text('T6'), findsOneWidget);
-    });
-
-    testWidgets('shows empty state when all months are zero', (tester) async {
-      bigView(tester);
-      final flows = [
-        for (var m = 1; m <= 6; m++) MonthlyFlow(DateTime(2026, m, 1), 0, 0),
-      ];
-      await tester.pumpWidget(host(MonthlyFlowCard(flows: flows)));
-      await tester.pump();
-      expect(find.text('Chưa có thu chi nào'), findsOneWidget);
-    });
-  });
+  // Seed handles: two expense categories + a wallet. (Seed adds no transactions.)
+  Future<({String foodId, String moveId, String walletId})> handles(
+      AppDatabase db) async {
+    final cats = await db.select(db.categories).get();
+    final food = cats.firstWhere((c) => c.name == 'Ăn uống');
+    final move = cats
+        .firstWhere((c) => c.type == CategoryType.expense && c.name != 'Ăn uống');
+    final w = (await db.select(db.wallets).get()).first;
+    return (foodId: food.id, moveId: move.id, walletId: w.id);
+  }
 
   group('ReportsScreen', () {
-    Widget app(AppDatabase db, DateTime month) => ProviderScope(
-          overrides: [
-            databaseProvider.overrideWithValue(db),
-            selectedMonthProvider.overrideWith((ref) => month),
-          ],
-          child: MaterialApp(
-            theme: buildTheme(AppThemeStyle.classic, Brightness.light),
-            home: const ReportsScreen(),
-          ),
-        );
-
-    testWidgets('shows the expense category for the selected month',
-        (tester) async {
+    testWidgets('donut total + breakdown rows for the month', (tester) async {
       final db = AppDatabase(NativeDatabase.memory());
       await seedIfEmpty(db);
-      final repo = AppRepository(db);
-      final cats = await db.select(db.categories).get();
-      final food = cats.firstWhere((c) => c.name == 'Ăn uống');
-      final w = (await db.select(db.wallets).get()).first;
-      await repo.addTransaction(
-        amount: 250000,
-        type: TransactionType.expense,
-        categoryId: food.id,
-        walletId: w.id,
-        occurredAt: DateTime(2026, 6, 10),
-      );
       addTearDown(db.close);
+      final repo = AppRepository(db);
+      final h = await handles(db);
+      await repo.addTransaction(
+          amount: 600000,
+          type: TransactionType.expense,
+          categoryId: h.foodId,
+          walletId: h.walletId,
+          occurredAt: DateTime(2026, 6, 10));
+      await repo.addTransaction(
+          amount: 400000,
+          type: TransactionType.expense,
+          categoryId: h.moveId,
+          walletId: h.walletId,
+          occurredAt: DateTime(2026, 6, 11));
       bigView(tester);
 
       await tester.pumpWidget(app(db, DateTime(2026, 6, 1)));
@@ -121,14 +76,93 @@ void main() {
 
       expect(find.text('Báo cáo'), findsOneWidget);
       expect(find.text('Tháng 6/2026'), findsOneWidget);
-      expect(find.text('Ăn uống'), findsWidgets);
-      expect(find.text('250.000 ₫'), findsWidgets);
+      expect(find.byType(CategoryDonut), findsOneWidget);
+      expect(find.text('Tổng chi'), findsOneWidget);
+      expect(find.text('1.000.000 ₫'), findsOneWidget); // donut centre sum
+      expect(find.text('Theo danh mục'), findsOneWidget);
+      expect(find.text('Ăn uống'), findsOneWidget); // breakdown row
+      expect(find.text('60%'), findsOneWidget);
+      expect(find.text('40%'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(Duration.zero);
     });
 
-    testWidgets('prev-month button moves the selected month', (tester) async {
+    testWidgets('tap a category row → CategoryDetailScreen; null bucket not tappable',
+        (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      await seedIfEmpty(db);
+      addTearDown(db.close);
+      final repo = AppRepository(db);
+      final h = await handles(db);
+      await repo.addTransaction(
+          amount: 600000,
+          type: TransactionType.expense,
+          categoryId: h.foodId,
+          walletId: h.walletId,
+          occurredAt: DateTime(2026, 6, 10));
+      await repo.addTransaction(
+          amount: 100000,
+          type: TransactionType.expense,
+          categoryId: null, // uncategorised → null bucket
+          walletId: h.walletId,
+          occurredAt: DateTime(2026, 6, 12));
+      bigView(tester);
+
+      await tester.pumpWidget(app(db, DateTime(2026, 6, 1)));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+
+      final nullRow = tester.widget<InsetRow>(find.ancestor(
+          of: find.text('Chưa phân loại'), matching: find.byType(InsetRow)));
+      expect(nullRow.onTap, isNull);
+
+      await tester.tap(find.text('Ăn uống'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CategoryDetailScreen), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(Duration.zero);
+    });
+
+    testWidgets('Quý segment widens the window to the quarter', (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      await seedIfEmpty(db);
+      addTearDown(db.close);
+      final repo = AppRepository(db);
+      final h = await handles(db);
+      await repo.addTransaction(
+          amount: 250000,
+          type: TransactionType.expense,
+          categoryId: h.foodId,
+          walletId: h.walletId,
+          occurredAt: DateTime(2026, 6, 10)); // June
+      await repo.addTransaction(
+          amount: 100000,
+          type: TransactionType.expense,
+          categoryId: h.moveId,
+          walletId: h.walletId,
+          occurredAt: DateTime(2026, 5, 9)); // May — same Q2
+      bigView(tester);
+
+      await tester.pumpWidget(app(db, DateTime(2026, 6, 1)));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+
+      expect(find.text('250.000 ₫'), findsWidgets); // month: June only
+      expect(find.text('350.000 ₫'), findsNothing);
+
+      await tester.tap(find.text('Quý'));
+      await tester.pump();
+      expect(find.text('Quý 2/2026'), findsOneWidget);
+      expect(find.text('350.000 ₫'), findsWidgets); // May + June
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(Duration.zero);
+    });
+
+    testWidgets('period nav steps by granularity; Năm steps a year',
+        (tester) async {
       final db = AppDatabase(NativeDatabase.memory());
       await seedIfEmpty(db);
       addTearDown(db.close);
@@ -137,9 +171,61 @@ void main() {
       await tester.pumpWidget(app(db, DateTime(2026, 6, 1)));
       await tester.pump(const Duration(milliseconds: 300));
 
-      await tester.tap(find.byKey(const Key('reportsPrevMonth')));
+      await tester.tap(find.byKey(const Key('reportsNextPeriod')));
       await tester.pump();
-      expect(find.text('Tháng 5/2026'), findsOneWidget);
+      expect(find.text('Tháng 7/2026'), findsOneWidget);
+
+      await tester.tap(find.text('Năm'));
+      await tester.pump();
+      expect(find.text('Năm 2026'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('reportsNextPeriod')));
+      await tester.pump();
+      expect(find.text('Năm 2027'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(Duration.zero);
+    });
+
+    testWidgets('trend stats: average + peak rows', (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      await seedIfEmpty(db);
+      addTearDown(db.close);
+      final repo = AppRepository(db);
+      final h = await handles(db);
+      await repo.addTransaction(
+          amount: 600000,
+          type: TransactionType.expense,
+          categoryId: h.foodId,
+          walletId: h.walletId,
+          occurredAt: DateTime(2026, 6, 10));
+      bigView(tester);
+
+      await tester.pumpWidget(app(db, DateTime(2026, 6, 1)));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+
+      expect(find.text('Trung bình / tháng'), findsOneWidget);
+      expect(find.text('100.000 ₫'), findsWidgets); // 600k / 6 = 100k
+      expect(find.text('Tháng cao nhất'), findsOneWidget);
+      expect(find.byType(PeriodFlowCard), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(Duration.zero);
+    });
+
+    testWidgets('empty period: donut empty state, no breakdown', (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      await seedIfEmpty(db);
+      addTearDown(db.close);
+      bigView(tester);
+
+      await tester.pumpWidget(app(db, DateTime(2026, 6, 1)));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+
+      expect(find.text('Chưa có chi tiêu kỳ này'), findsOneWidget);
+      expect(find.text('Theo danh mục'), findsNothing);
+      expect(find.text('Chưa có thu chi nào'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(Duration.zero);
@@ -167,7 +253,7 @@ void main() {
       await tester.tap(find.byKey(const Key('openReports')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Báo cáo'), findsOneWidget); // app bar của ReportsScreen
+      expect(find.text('Báo cáo'), findsOneWidget); // ReportsScreen app bar
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(Duration.zero);
